@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Menu, X, User } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -11,20 +11,49 @@ const NAV_ITEMS = [
   { label: 'Nearby', slug: 'nearby' },
 ];
 
-export default function SiteHeader() {
+interface SiteHeaderProps {
+  isDarkSlide?: boolean; // 현재 슬라이드가 어두운지 여부
+}
+
+export default function SiteHeader({ isDarkSlide = false }: SiteHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // 텍스트 색상 결정 로직:
+  // 1. 메뉴가 열렸을 땐 화이트
+  // 2. 스크롤 전이면서 어두운 슬라이드일 땐 화이트
+  // 3. 그 외(오트밀 배경, 스크롤 후)에는 블랙
+  const textColorClass = isMenuOpen || (!isScrolled && isDarkSlide) 
+    ? "text-white" 
+    : "text-black";
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 mix-blend-difference text-white p-6">
+    <header className={`fixed top-0 left-0 w-full z-[10000] transition-all duration-500 p-6 ${
+      isMenuOpen 
+        ? "bg-black/60 backdrop-blur-[35px] border-b border-white/10" 
+        : isScrolled
+          ? "bg-[#F4F4F2]/80 backdrop-blur-md border-b border-black/5"
+          : "bg-transparent"
+    }`}>
       <div className="flex justify-between items-start">
         {/* LOGO */}
-        <Link href="/" className="text-4xl font-serif font-bold tracking-tighter hover:opacity-80 transition-opacity">
+        <Link href="/" className={`text-4xl font-serif font-bold tracking-tighter hover:opacity-80 transition-colors duration-500 ${textColorClass}`}>
           TTiG
         </Link>
 
         {/* DESKTOP NAV */}
         {/* 수정됨: md:ml-[20%]로 우측 이동, ABOUT 먼저 배치 */}
-        <nav className="hidden md:flex gap-12 mt-2 text-sm font-bold tracking-widest md:ml-[20%]">
+        <nav className={`hidden md:flex gap-12 mt-2 text-sm font-bold tracking-widest md:ml-[20%] transition-colors duration-500 ${
+          isMenuOpen ? "text-white/90" : textColorClass === "text-white" ? "text-white/90" : "text-black/80"
+        }`}>
           
           {/* 1. ABOUT (순서 변경: 맨 앞으로) */}
           <Link href="/about" className="hover:opacity-50 transition-opacity text-base">ABOUT</Link>
@@ -43,7 +72,9 @@ export default function SiteHeader() {
                     className="block w-fit group/item"
                   >
                     {/* [핵심 변경] 폰트 크기 축소 + 기본 50% 투명도 적용 */}
-                    <span className="text-xl md:text-2xl font-serif font-bold text-white/40 group-hover/item:text-white group-hover/item:italic transition-all duration-300 block">
+                    <span className={`text-xl md:text-2xl font-serif font-bold group-hover/item:italic transition-all duration-300 block ${
+                      isMenuOpen ? "text-white/40 group-hover/item:text-white" : "text-black/40 group-hover/item:text-black"
+                    }`}>
                       {item.label}
                     </span>
                   </Link>
@@ -55,13 +86,13 @@ export default function SiteHeader() {
 
         {/* ICONS */}
         <div className="flex gap-4 mt-1">
-          <Search size={20} className="cursor-pointer hover:opacity-50" />
+          <Search size={20} className={`cursor-pointer hover:opacity-50 transition-colors duration-500 ${textColorClass}`} />
           <Link href="/login">
-            <User size={20} className="cursor-pointer hover:opacity-50" />
+            <User size={20} className={`cursor-pointer hover:opacity-50 transition-colors duration-500 ${textColorClass}`} />
           </Link>
           <Menu 
             size={24} 
-            className="md:hidden cursor-pointer hover:opacity-50" 
+            className={`md:hidden cursor-pointer hover:opacity-50 transition-colors duration-500 ${textColorClass}`}
             onClick={() => setIsMenuOpen(true)}
           />
         </div>
@@ -69,26 +100,32 @@ export default function SiteHeader() {
 
       {/* MOBILE MENU */}
       {isMenuOpen && (
-        <div className="fixed inset-0 bg-black text-white z-[9999] flex flex-col p-6">
-          <div className="flex justify-between items-start mb-10">
-            <span className="text-4xl font-serif font-bold tracking-tighter">TTiG</span>
-            <X size={24} className="cursor-pointer" onClick={() => setIsMenuOpen(false)} />
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-[35px] h-screen w-screen flex flex-col items-center justify-center p-6 transition-all duration-700 opacity-100">
+          <div className="absolute top-6 left-6 right-6 flex justify-between items-start mb-10">
+            <span className="text-4xl font-serif font-bold tracking-tighter text-white drop-shadow-md">TTiG</span>
+            <X size={24} className="cursor-pointer text-white hover:opacity-50 transition-opacity drop-shadow-md" onClick={() => setIsMenuOpen(false)} />
           </div>
 
-          <nav className="flex flex-col gap-6">
+          <nav className="flex flex-col items-center justify-center space-y-12">
              {/* 모바일에서도 ABOUT 먼저 */}
-             <Link href="/about" className="text-lg font-bold" onClick={() => setIsMenuOpen(false)}>ABOUT</Link>
-             <div className="w-full h-px bg-gray-200 my-2"></div>
+             <Link href="/about" className="group relative w-fit" onClick={() => setIsMenuOpen(false)}>
+               <span className="block text-[14px] font-light tracking-[0.5em] text-white uppercase drop-shadow-md transition-all duration-500 ease-in-out group-hover:italic group-hover:translate-x-2 group-hover:opacity-70">
+                 ABOUT
+               </span>
+               <span className="absolute -bottom-2 left-1/2 w-0 h-[1px] bg-white opacity-50 transition-all duration-500 group-hover:w-full group-hover:left-0"></span>
+             </Link>
+             <div className="w-full h-px bg-white/20 my-2"></div>
             {NAV_ITEMS.map((item) => (
               <Link 
                 key={item.slug} 
                 href={`/category/${item.slug}`}
                 onClick={() => setIsMenuOpen(false)}
-                className="w-fit"
+                className="group relative w-fit"
               >
-                <span className="text-3xl font-serif font-bold hover:text-gray-400 hover:italic transition-all duration-200">
+                <span className="block text-[14px] font-light tracking-[0.5em] text-white uppercase drop-shadow-md transition-all duration-500 ease-in-out group-hover:italic group-hover:translate-x-2 group-hover:opacity-70">
                   {item.label}
                 </span>
+                <span className="absolute -bottom-2 left-1/2 w-0 h-[1px] bg-white opacity-50 transition-all duration-500 group-hover:w-full group-hover:left-0"></span>
               </Link>
             ))}
           </nav>
