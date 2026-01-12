@@ -1,0 +1,28 @@
+[
+  {
+    "id": "sample-ann299",
+    "slug": "nearby-stay-stay-ann299",
+    "title": "STAY ANN299",
+    "category": "STAY",
+    "district": "NEARBY",
+    "status": "PUBLISHED",
+    "bookingUrl": "https://www.airbnb.com/rooms/example",
+    "tagline": "서울에서 30분, 파노라마로 펼쳐지는 휴식.",
+    "description": "도심에서 벗어나고 싶지만, 멀리 떠나기는 부담스러운 날이 있습니다.\n\nANN299는 서울에서 차로 30분 거리, 믿기지 않을 만큼 고요한 숲속에 자리 잡고 있습니다. 이곳의 하이라이트는 단연 '뷰'입니다. 거실 통창 너머로 막힘없이 펼쳐지는 능선은 계절마다 다른 그림을 그려냅니다.",
+    "image": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000&auto=format&fit=crop",
+    "amenities": [
+      {
+        "label": "Forest View"
+      },
+      {
+        "label": "Jacuzzi"
+      }
+    ],
+    "properties": {
+      "district": "NEARBY",
+      "address": "경기 남양주시 화도읍",
+      "hours": "Check-in 15:00",
+      "parking": "전용 주차장"
+    }
+  }
+]
