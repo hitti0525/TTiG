@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import TagInput from '@/app/components/TagInput';
@@ -36,7 +36,8 @@ const TAGS_BY_CATEGORY: Record<string, string[]> = {
 // 지역 목록
 const DISTRICTS = ["SEONGSU", "HANNAM", "GANGNAM", "JAMSIL", "NEARBY"];
 
-export default function WritePage() {
+// 내부 컴포넌트: useSearchParams를 사용하는 실제 폼
+function WriteForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('id');
@@ -110,18 +111,6 @@ export default function WritePage() {
     });
   };
 
-  // 태그 토글 핸들러 (선택/해제)
-  const toggleFeature = (feature: string) => {
-    setFormData(prev => {
-      const exists = prev.features.includes(feature);
-      if (exists) {
-        return { ...prev, features: prev.features.filter(f => f !== feature) };
-      } else {
-        return { ...prev, features: [...prev.features, feature] };
-      }
-    });
-  };
-
   const handleSubmit = async () => {
     if (!formData.image) {
       alert('이미지 URL은 필수입니다!');
@@ -181,9 +170,6 @@ export default function WritePage() {
       </div>
     );
   }
-
-  // 3. 현재 카테고리에 맞는 태그 목록 가져오기
-  const currentTags = TAGS_BY_CATEGORY[formData.category] || [];
 
   return (
     <div className="min-h-screen bg-[#F5F5F3] p-8 pt-32 flex justify-center text-[#111]">
@@ -309,5 +295,20 @@ export default function WritePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// 외부 컴포넌트: Suspense로 감싸기
+export default function WritePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F5F5F3] p-8 pt-32 flex justify-center text-[#111]">
+        <div className="w-full max-w-4xl bg-white border border-[#E5E5E5] shadow-sm p-8 md:p-12">
+          <p className="text-gray-400">로딩 중...</p>
+        </div>
+      </div>
+    }>
+      <WriteForm />
+    </Suspense>
   );
 }
