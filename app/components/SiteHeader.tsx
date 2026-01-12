@@ -69,7 +69,7 @@ export default function SiteHeader() {
 
       {/* MOBILE MENU */}
       {isMenuOpen && (
-        <div className="fixed inset-0 bg-white text-black z-50 flex flex-col p-6">
+        <div className="fixed inset-0 bg-black text-white z-[9999] flex flex-col p-6">
           <div className="flex justify-between items-start mb-10">
             <span className="text-4xl font-serif font-bold tracking-tighter">TTiG</span>
             <X size={24} className="cursor-pointer" onClick={() => setIsMenuOpen(false)} />

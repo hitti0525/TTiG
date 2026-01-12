@@ -48,12 +48,12 @@ export default function MainClient({ places }: { places: any[] }) {
         transition={{ ...easeTransition, delay: 0.2 }}
         className="min-h-screen flex flex-col justify-center bg-[#F5F5F3] pt-32 md:pt-40"
       >
-        <div className="pl-8 md:pl-16 lg:pl-24 xl:pl-32 pr-6 md:pr-12">
+        <div className="px-6 md:pl-16 lg:pl-24 xl:pl-32 md:pr-12">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...easeTransition, delay: 0.2 }}
-            className="font-serif text-[12vw] md:text-[10vw] lg:text-[9vw] leading-[0.85] tracking-tighter text-[#111] text-left"
+            className="font-serif text-[10vw] sm:text-[9vw] md:text-[10vw] lg:text-[9vw] leading-[0.85] tracking-tighter text-[#111] text-left md:text-left"
           >
             THE BAND<br />
             <span className="text-[4vw] md:text-[3.5vw] lg:text-[3vw] font-serif italic text-[#888] opacity-80">FOR</span><br />

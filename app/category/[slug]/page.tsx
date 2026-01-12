@@ -71,8 +71,8 @@ export default async function CategoryPage({
           ))
         ) : (
           <div className="col-span-2 py-20 text-center">
-            <h3 className="text-xl font-serif text-gray-400 mb-2">No stories found in this district yet.</h3>
-            <p className="text-xs text-gray-400">Check back later or explore other districts.</p>
+            <h3 className="text-xl font-serif text-gray-400 mb-2">아직 기록된 공간이 없습니다.</h3>
+            <p className="text-xs text-gray-400">곧 멋진 문장들로 채워질 예정이에요.</p>
             <Link href="/" className="inline-block mt-6 px-6 py-3 bg-black text-white text-xs font-bold uppercase tracking-widest hover:bg-gray-800">
               View All Archives
             </Link>
