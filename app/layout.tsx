@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className={`${serif.variable} ${sans.variable}`}>
       <head>
-        {/* 1. 구글 태그 관리자 Head - Next.js 문법에 맞춰 수정했습니다. */}
+        {<meta name="naver-site-verification" content="7ae6701c1769629c3e3348a61aefe08ef08ee8d7" />}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
