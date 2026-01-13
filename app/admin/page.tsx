@@ -76,11 +76,22 @@ export default function AdminDashboard() {
       <div className="flex justify-between items-end mb-12 border-b border-black/10 pb-6">
         <div>
           <h1 className="text-3xl font-serif font-bold text-black">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-2">Manage your archived spaces.</p>
+          <p className="text-sm text-gray-500 mt-2">Manage your archived spaces and inquiries.</p>
         </div>
-        <Link href="/admin/write" className="bg-black text-white px-6 py-3 text-xs font-bold tracking-widest rounded-full hover:bg-gray-800 transition-all">
-          + NEW SPACE
-        </Link>
+        <div className="flex gap-3">
+          <Link 
+            href="/admin/inquiries" 
+            className="px-6 py-3 border border-black/20 text-black text-xs font-bold tracking-widest rounded-full hover:bg-black hover:text-white transition-all"
+          >
+            VIEW INQUIRIES
+          </Link>
+          <Link 
+            href="/admin/write" 
+            className="bg-black text-white px-6 py-3 text-xs font-bold tracking-widest rounded-full hover:bg-gray-800 transition-all"
+          >
+            + NEW SPACE
+          </Link>
+        </div>
       </div>
       <div className="space-y-4">
         {places.length === 0 ? (

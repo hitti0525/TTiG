@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Search, Menu, X, User } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -18,20 +19,55 @@ interface SiteHeaderProps {
 export default function SiteHeader({ isDarkSlide = false }: SiteHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isDarkBackground, setIsDarkBackground] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      const scrollY = window.scrollY;
+      setIsScrolled(scrollY > 20);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    
+    // IntersectionObserver로 about 페이지의 3번 슬라이드 직접 감지
+    let observer: IntersectionObserver | null = null;
+    
+    if (pathname === '/about') {
+      const darkSlide = document.getElementById('dark-slide');
+      if (darkSlide) {
+        observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              // 3번 슬라이드가 뷰포트에 30% 이상 보이면 어두운 배경으로 감지
+              setIsDarkBackground(entry.isIntersecting && entry.intersectionRatio >= 0.3);
+            });
+          },
+          {
+            threshold: [0, 0.3, 0.5, 0.7, 1],
+            rootMargin: '-20% 0px -20% 0px', // 상하 20% 여유를 두고 감지
+          }
+        );
+        observer.observe(darkSlide);
+      }
+    } else {
+      setIsDarkBackground(false);
+    }
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [pathname]);
 
   // 텍스트 색상 결정 로직:
   // 1. 메뉴가 열렸을 땐 화이트
-  // 2. 스크롤 전이면서 어두운 슬라이드일 땐 화이트
-  // 3. 그 외(오트밀 배경, 스크롤 후)에는 블랙
-  const textColorClass = isMenuOpen || (!isScrolled && isDarkSlide) 
+  // 2. about 페이지에서 어두운 배경 영역에 있을 때 화이트
+  // 3. 스크롤 전이면서 어두운 슬라이드일 땐 화이트
+  // 4. 그 외(오트밀 배경, 스크롤 후)에는 블랙
+  const textColorClass = isMenuOpen || isDarkBackground || (!isScrolled && isDarkSlide)
     ? "text-white" 
     : "text-black";
 
@@ -73,7 +109,7 @@ export default function SiteHeader({ isDarkSlide = false }: SiteHeaderProps) {
                   >
                     {/* [핵심 변경] 폰트 크기 축소 + 기본 50% 투명도 적용 */}
                     <span className={`text-xl md:text-2xl font-serif font-bold group-hover/item:italic transition-all duration-300 block ${
-                      isMenuOpen ? "text-white/40 group-hover/item:text-white" : "text-black/40 group-hover/item:text-black"
+                      (isMenuOpen || isDarkBackground) ? "text-white/40 group-hover/item:text-white" : "text-black/40 group-hover/item:text-black"
                     }`}>
                       {item.label}
                     </span>
