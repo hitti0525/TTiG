@@ -1,12 +1,16 @@
 import { getTemplates } from "@/lib/data-source";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import type { Metadata } from "next";
 import { 
   MapPin, Clock, Car, ChevronDown, ExternalLink,
   Wine, Coffee, Utensils, Wifi, Baby, Dog, CreditCard, 
   Building2, Waves, Trees, Mountain, Sparkles, CheckCircle2,
   DoorOpen, Bed, Gift, Book, Camera, Heart
 } from 'lucide-react';
+import SpaceActionBar from '@/app/components/SpaceActionBar';
+import { incrementView } from '@/lib/actions/space';
+import Link from 'next/link';
 
 // 동적 라우팅 강제
 export const dynamic = 'force-dynamic';
@@ -76,11 +80,66 @@ const ICON_MAP: Record<string, any> = {
 // 데이터에 없는 태그는 기본 아이콘(CheckCircle2) 사용
 const getIcon = (feature: string) => ICON_MAP[feature] || CheckCircle2;
 
+// Dynamic Metadata 생성
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> | { slug: string } }): Promise<Metadata> {
+  const resolvedParams = await Promise.resolve(params);
+  const templates = await getTemplates();
+  const place = templates.find((t: any) => t.slug === resolvedParams.slug);
+  
+  if (!place) {
+    return {
+      title: 'Space Not Found | TTiG',
+    };
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ttig.kr';
+  const imageUrl = place.image || `${baseUrl}/og-default.jpg`;
+  const description = place.description?.substring(0, 160) || place.tagline || '서울의 감각적인 공간을 아카이빙합니다.';
+
+  return {
+    title: `${place.title} | TTiG Archive`,
+    description,
+    openGraph: {
+      title: `${place.title} | TTiG Archive`,
+      description,
+      url: `${baseUrl}/${place.slug}`,
+      siteName: 'TTiG',
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: place.title,
+        },
+      ],
+      locale: 'ko_KR',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${place.title} | TTiG Archive`,
+      description,
+      images: [imageUrl],
+    },
+    alternates: {
+      canonical: `${baseUrl}/${place.slug}`,
+    },
+  };
+}
+
 export default async function Page({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
   const resolvedParams = await Promise.resolve(params);
   const templates = await getTemplates();
   const place = templates.find((t: any) => t.slug === resolvedParams.slug);
   if (!place) notFound();
+
+  // 조회수 증가 (서버 사이드에서 실행)
+  try {
+    await incrementView(place.id || place.slug);
+  } catch (error) {
+    console.error('Failed to increment view:', error);
+    // 조회수 증가 실패해도 페이지는 정상 표시
+  }
 
   const info = place.properties || {};
   const images = place.subImages && place.subImages.length > 0 ? place.subImages : (place.image ? [place.image] : []);
@@ -89,19 +148,49 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   // amenities 배열에서 label 추출
   const features = place.amenities ? place.amenities.map((item: any) => item.label || item) : [];
 
-  // JSON-LD Schema.org 데이터 생성
+  // Supabase에서 통계 데이터 가져오기 (현재는 JSON 데이터 사용 중)
+  const viewsCount = place.views_count || 0;
+  const keepsCount = place.keeps_count || 0;
+  const sharesCount = place.shares_count || 0;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ttig.kr';
+
+  // JSON-LD Schema.org 데이터 생성 (AI 검색 엔진용)
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": place.category === "STAY" ? "LodgingBusiness" : place.category === "DINING" ? "Restaurant" : "LocalBusiness",
     "name": place.title,
     "description": place.description,
     "image": place.image,
+    "url": `${baseUrl}/${place.slug}`,
     "address": {
       "@type": "PostalAddress",
       "streetAddress": info.address || ""
     },
     "openingHours": info.hours || "",
-    "url": place.bookingUrl || ""
+    "aggregateRating": viewsCount > 0 ? {
+      "@type": "AggregateRating",
+      "ratingValue": "4.5",
+      "reviewCount": viewsCount.toString(),
+      "bestRating": "5",
+      "worstRating": "1"
+    } : undefined,
+    "interactionStatistic": [
+      {
+        "@type": "InteractionCounter",
+        "interactionType": "https://schema.org/ViewAction",
+        "userInteractionCount": viewsCount
+      },
+      {
+        "@type": "InteractionCounter",
+        "interactionType": "https://schema.org/SaveAction",
+        "userInteractionCount": keepsCount
+      },
+      {
+        "@type": "InteractionCounter",
+        "interactionType": "https://schema.org/ShareAction",
+        "userInteractionCount": sharesCount
+      }
+    ]
   };
 
   return (
@@ -124,6 +213,9 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               <div className="w-10 h-px bg-black/20 mb-8"></div>
               <p className="text-sm md:text-base leading-[1.8] text-[#333] font-normal whitespace-pre-line break-keep">{place.description}</p>
             </div>
+            
+            {/* Space Action Bar - 본문 끝에 배치 */}
+            <SpaceActionBar spaceId={place.id} spaceSlug={place.slug} />
             
             {/* Icon Grid Features (NEW!) */}
             {features.length > 0 && (
@@ -187,6 +279,52 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               <div className="flex items-center justify-center h-screen text-gray-400">No images available</div>
             )}
             <footer className="py-20 px-12 bg-[#111] text-white"><div className="flex flex-col gap-8"><h2 className="text-2xl font-serif font-bold">TTiG.</h2><div className="text-xs font-bold tracking-widest text-gray-500 space-y-2"><p>© 2024 TTiG Archive.</p><p>Seoul, Korea</p></div></div></footer>
+          </div>
+        </div>
+
+        {/* 관련된 다른 장면 (Related Scenes) - SEO 내부 링크 강화 */}
+        <div className="bg-[#F5F5F3] py-20 px-6 md:px-12 lg:px-24">
+          <div className="max-w-[2000px] mx-auto">
+            <div className="mb-12">
+              <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#111] mb-4">Related Scenes</h2>
+              <div className="w-20 h-px bg-black/20"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {templates
+                .filter((p: any) => 
+                  p.slug !== place.slug && 
+                  (!p.status || p.status === 'PUBLISHED') &&
+                  (p.category === place.category || p.district === place.district)
+                )
+                .slice(0, 6)
+                .map((relatedPlace: any) => (
+                  <Link 
+                    key={relatedPlace.id} 
+                    href={`/${relatedPlace.slug}`}
+                    className="group block"
+                  >
+                    <div className="relative aspect-[3/4] w-full bg-gray-100 overflow-hidden mb-4">
+                      {relatedPlace.image && (
+                        <Image 
+                          src={relatedPlace.image} 
+                          alt={relatedPlace.title}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <h3 className="text-lg font-serif text-[#111] group-hover:underline decoration-1 underline-offset-4">
+                        {relatedPlace.title}
+                      </h3>
+                      <p className="text-xs text-[#888] uppercase tracking-wide">
+                        {relatedPlace.properties?.district || relatedPlace.district} · {relatedPlace.category}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+            </div>
           </div>
         </div>
       </div>

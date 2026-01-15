@@ -1,23 +1,11 @@
 -- Supabase SQL Editor에서 실행할 SQL 스크립트
--- 문의(inquiries) 테이블 생성
+-- spaces 테이블에 통계 컬럼 추가 (views_count, keeps_count, shares_count)
 
-create table inquiries (
-  id uuid default gen_random_uuid() primary key,
-  name text,
-  email text,
-  message text,
-  status text default 'new',
-  created_at timestamp with time zone default now()
-);
+-- spaces 테이블이 존재하지 않는 경우를 대비해 먼저 확인
+-- 테이블이 이미 존재한다면 이 부분은 건너뛰고 ALTER TABLE만 실행하세요
 
--- 테이블 생성 확인
--- SELECT * FROM inquiries;
-
--- ============================================
 -- spaces 테이블에 통계 컬럼 추가
--- ============================================
--- 이 스크립트는 spaces 테이블이 이미 존재한다고 가정합니다.
--- 테이블이 없다면 먼저 spaces 테이블을 생성한 후 실행하세요.
+-- 이미 존재하는 컬럼이면 오류가 발생할 수 있으므로, 존재하지 않을 때만 추가하도록 처리
 
 DO $$ 
 BEGIN
@@ -46,7 +34,7 @@ BEGIN
     END IF;
 END $$;
 
--- 컬럼 추가 확인 쿼리 (주석 해제하여 실행)
+-- 컬럼 추가 확인
 -- SELECT column_name, data_type, column_default 
 -- FROM information_schema.columns 
 -- WHERE table_name = 'spaces' 

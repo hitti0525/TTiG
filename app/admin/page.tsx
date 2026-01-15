@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export default function AdminDashboard() {
   const [places, setPlaces] = useState<any[]>([]);
@@ -71,8 +72,24 @@ export default function AdminDashboard() {
     }
   };
 
+  // 통계 계산
+  const totalViews = places.reduce((sum, place) => sum + (place.views_count || 0), 0);
+  const totalKeeps = places.reduce((sum, place) => sum + (place.keeps_count || 0), 0);
+  const totalShares = places.reduce((sum, place) => sum + (place.shares_count || 0), 0);
+  const shareRate = totalViews > 0 ? ((totalShares / totalViews) * 100).toFixed(1) : '0.0';
+
+  // 차트 데이터 준비 (상위 10개 공간)
+  const chartData = places
+    .map((place) => ({
+      name: place.title.length > 15 ? place.title.substring(0, 15) + '...' : place.title,
+      views: place.views_count || 0,
+      keeps: place.keeps_count || 0,
+    }))
+    .sort((a, b) => (b.views + b.keeps) - (a.views + a.keeps))
+    .slice(0, 10);
+
   return (
-    <div className="min-h-screen bg-[#F5F5F3] p-8 pt-32 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-[#F5F5F3] p-8 pt-32 max-w-7xl mx-auto">
       <div className="flex justify-between items-end mb-12 border-b border-black/10 pb-6">
         <div>
           <h1 className="text-3xl font-serif font-bold text-black">Dashboard</h1>
@@ -93,6 +110,68 @@ export default function AdminDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* 통계 요약 카드 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="bg-white p-6 border border-black/10 rounded-lg">
+          <div className="text-xs font-sans text-gray-500 uppercase tracking-widest mb-2">Total Views</div>
+          <div className="text-4xl font-serif font-bold text-black">{totalViews.toLocaleString()}</div>
+        </div>
+        <div className="bg-white p-6 border border-black/10 rounded-lg">
+          <div className="text-xs font-sans text-gray-500 uppercase tracking-widest mb-2">Total Keeps</div>
+          <div className="text-4xl font-serif font-bold text-black">{totalKeeps.toLocaleString()}</div>
+        </div>
+        <div className="bg-white p-6 border border-black/10 rounded-lg">
+          <div className="text-xs font-sans text-gray-500 uppercase tracking-widest mb-2">Share Rate</div>
+          <div className="text-4xl font-serif font-bold text-black">{shareRate}%</div>
+        </div>
+      </div>
+
+      {/* 차트 섹션 */}
+      {chartData.length > 0 && (
+        <div className="bg-white p-8 border border-black/10 rounded-lg mb-12">
+          <h2 className="text-xl font-serif font-bold text-black mb-6">Most Engaged Spaces</h2>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  tick={{ fontSize: 11, fill: '#666' }}
+                />
+                <YAxis 
+                  tick={{ fontSize: 11, fill: '#666' }}
+                  stroke="#999"
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '4px',
+                    fontSize: '12px'
+                  }}
+                />
+                <Bar dataKey="views" name="Views" fill="#111" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="keeps" name="Keeps" fill="#666" radius={[0, 0, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex gap-6 mt-6 justify-center">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-black"></div>
+              <span className="text-xs font-sans text-gray-600">Views</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-gray-500"></div>
+              <span className="text-xs font-sans text-gray-600">Keeps</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         {places.length === 0 ? (
           <div className="py-20 text-center text-gray-400">
