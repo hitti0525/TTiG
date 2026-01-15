@@ -295,45 +295,6 @@ export default function DashboardContent() {
     setLast7DaysData(days);
   }, [isClient, analyticsData]);
 
-  // 데이터 로딩 useEffect (모든 hooks 선언 후)
-  useEffect(() => {
-    // 클라이언트에서만 데이터 로드
-    if (!isClient) return;
-    
-    // 초기 데이터 로드
-    let isMounted = true;
-    
-    const loadData = async () => {
-      try {
-        await fetchData();
-        if (isMounted) {
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Error in initial data load:', error);
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-    
-    loadData();
-    
-    // 30초마다 자동 새로고침 (실시간 통계 반영)
-    const interval = setInterval(() => {
-      if (isMounted) {
-        fetchData().catch((error) => {
-          console.error('Error in interval fetch:', error);
-        });
-      }
-    }, 30000); // 30초
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [isClient, supabaseUrl, supabaseKey]);
-
   // 🔒 React Hooks 규칙: 모든 hooks 호출 후에만 early return 가능
   // 서버에서는 완전히 빈 HTML만 반환 (정적 HTML 일치)
   if (!isClient) {
