@@ -82,8 +82,8 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white p-8 pt-32 max-w-7xl mx-auto flex items-center justify-center">
-        <p className="text-black font-sans text-sm">Loading...</p>
+      <div className="min-h-screen bg-[#F5F5F3] p-8 pt-32 max-w-7xl mx-auto flex items-center justify-center">
+        <p className="text-[#111111] font-sans text-sm">로딩 중...</p>
       </div>
     );
   }
@@ -92,45 +92,45 @@ export default function AdminDashboard() {
   const totalKeeps = places.reduce((sum, place) => sum + (place.keeps_count || 0), 0);
 
   return (
-    <div className="min-h-screen bg-white p-12 pt-32 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#F5F5F3] p-12 pt-32 max-w-7xl mx-auto">
       {/* 헤더 */}
-      <div className="mb-16 border-b border-black pb-8">
-        <h1 className="text-6xl font-serif font-bold text-black mb-4 tracking-tight">Dashboard</h1>
+      <div className="mb-12 border-b border-[#111111]/10 pb-6">
+        <h1 className="text-4xl font-serif font-bold text-[#111111] mb-3 tracking-tight">대시보드</h1>
         <div className="flex justify-between items-end">
-          <p className="text-sm font-sans text-black/60 uppercase tracking-widest">Analytics & Management</p>
+          <p className="text-sm font-sans text-[#111111]/60">분석 및 관리</p>
           <div className="flex gap-3">
             <Link 
               href="/admin/inquiries" 
-              className="px-6 py-2 border border-black text-black text-xs font-sans font-bold tracking-widest uppercase hover:bg-black hover:text-white transition-all"
+              className="px-6 py-2 border border-[#111111] text-[#111111] text-xs font-sans font-bold tracking-widest hover:bg-[#111111] hover:text-white transition-all"
             >
-              Inquiries
+              문의 내역
             </Link>
             <Link 
               href="/admin/write" 
-              className="bg-black text-white px-6 py-2 text-xs font-sans font-bold tracking-widest uppercase hover:bg-black/80 transition-all"
+              className="bg-[#111111] text-white px-6 py-2 text-xs font-sans font-bold tracking-widest hover:bg-[#111111]/80 transition-all"
             >
-              + New Space
+              + 새 공간
             </Link>
           </div>
         </div>
       </div>
 
       {/* 상단: 주요 지표 */}
-      <div className="grid grid-cols-2 gap-12 mb-20">
+      <div className="grid grid-cols-2 gap-12 mb-16">
         <div>
-          <div className="text-xs font-sans text-black/40 uppercase tracking-widest mb-3">Total Keep</div>
-          <div className="text-7xl font-sans font-bold text-black leading-none">{totalKeeps.toLocaleString()}</div>
+          <div className="text-xs font-sans text-[#111111]/40 mb-2">총 Keep 수</div>
+          <div className="text-5xl font-sans font-bold text-[#111111] leading-none">{totalKeeps.toLocaleString()}</div>
         </div>
         <div>
-          <div className="text-xs font-sans text-black/40 uppercase tracking-widest mb-3">Daily Visitors</div>
-          <div className="text-7xl font-sans font-bold text-black leading-none">{dailyVisitors.toLocaleString()}</div>
+          <div className="text-xs font-sans text-[#111111]/40 mb-2">일일 방문자</div>
+          <div className="text-5xl font-sans font-bold text-[#111111] leading-none">{dailyVisitors.toLocaleString()}</div>
         </div>
       </div>
 
       {/* 중앙: 최근 7일간 방문 추이 선 그래프 */}
-      <div className="mb-20">
-        <h2 className="text-2xl font-serif font-bold text-black mb-8">Last 7 Days</h2>
-        <div className="h-96 border-t border-b border-black/10 pt-8 pb-4">
+      <div className="mb-16">
+        <h2 className="text-xl font-serif font-bold text-[#111111] mb-6">최근 7일간 방문 추이</h2>
+        <div className="h-80 border-t border-b border-[#111111]/10 pt-6 pb-4">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart 
               data={last7DaysData} 
@@ -155,22 +155,22 @@ export default function AdminDashboard() {
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#fff', 
-                  border: '1px solid #000',
+                  backgroundColor: '#F5F5F3', 
+                  border: '1px solid #111111',
                   borderRadius: '0',
                   fontSize: '11px',
                   fontFamily: 'sans-serif',
                   padding: '8px 12px'
                 }}
-                cursor={{ stroke: '#000', strokeWidth: 0.5, strokeDasharray: '2 2' }}
+                cursor={{ stroke: '#111111', strokeWidth: 0.5, strokeDasharray: '2 2' }}
               />
               <Line 
                 type="monotone" 
                 dataKey="visitors" 
-                stroke="#000" 
+                stroke="#111111" 
                 strokeWidth={2}
-                dot={{ fill: '#000', r: 3 }}
-                activeDot={{ r: 5, stroke: '#000', strokeWidth: 1 }}
+                dot={{ fill: '#111111', r: 3 }}
+                activeDot={{ r: 5, stroke: '#111111', strokeWidth: 1 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -178,26 +178,26 @@ export default function AdminDashboard() {
       </div>
 
       {/* 하단: 최신 문의 리스트 */}
-      <div className="mb-20">
-        <h2 className="text-2xl font-serif font-bold text-black mb-8">Recent Inquiries</h2>
+      <div className="mb-16">
+        <h2 className="text-xl font-serif font-bold text-[#111111] mb-6">최근 문의</h2>
         {inquiries.length === 0 ? (
-          <div className="py-12 text-center border-t border-b border-black/10">
-            <p className="text-sm font-sans text-black/40">No inquiries yet.</p>
+          <div className="py-12 text-center border-t border-b border-[#111111]/10">
+            <p className="text-sm font-sans text-[#111111]/40">문의 내역이 없습니다.</p>
           </div>
         ) : (
-          <div className="space-y-0 border-t border-black/10">
+          <div className="space-y-0 border-t border-[#111111]/10">
             {inquiries.map((inquiry: any, index: number) => (
               <div 
                 key={inquiry.id} 
-                className="py-6 border-b border-black/10 hover:bg-black/5 transition-colors"
+                className="py-6 border-b border-[#111111]/10 hover:bg-[#111111]/5 transition-colors"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-2">
-                      <span className="text-xs font-sans font-bold text-black uppercase tracking-widest">
-                        {inquiry.name || 'Anonymous'}
+                      <span className="text-xs font-sans font-bold text-[#111111]">
+                        {inquiry.name || '익명'}
                       </span>
-                      <span className="text-xs font-sans text-black/40">
+                      <span className="text-xs font-sans text-[#111111]/40">
                         {new Date(inquiry.created_at).toLocaleDateString('ko-KR', {
                           year: 'numeric',
                           month: 'short',
@@ -207,14 +207,14 @@ export default function AdminDashboard() {
                         })}
                       </span>
                     </div>
-                    <p className="text-sm font-sans text-black/80 leading-relaxed">
+                    <p className="text-sm font-sans text-[#111111]/80 leading-relaxed">
                       {inquiry.message || '-'}
                     </p>
-                    <p className="text-xs font-sans text-black/40 mt-2">{inquiry.email}</p>
+                    <p className="text-xs font-sans text-[#111111]/40 mt-2">{inquiry.email}</p>
                   </div>
                   {inquiry.status === 'new' && (
-                    <span className="text-[10px] font-sans font-bold text-black uppercase tracking-widest border border-black px-2 py-1">
-                      New
+                    <span className="text-[10px] font-sans font-bold text-[#111111] border border-[#111111] px-2 py-1">
+                      신규
                     </span>
                   )}
                 </div>
@@ -226,31 +226,31 @@ export default function AdminDashboard() {
 
       {/* 공간 목록 (기존 기능 유지) */}
       <div className="mb-12">
-        <h2 className="text-2xl font-serif font-bold text-black mb-8">Spaces</h2>
+        <h2 className="text-xl font-serif font-bold text-[#111111] mb-6">공간 목록</h2>
         <div className="space-y-2">
           {places.length === 0 ? (
-            <div className="py-12 text-center border-t border-b border-black/10">
-              <p className="text-sm font-sans text-black/40">No spaces yet.</p>
+            <div className="py-12 text-center border-t border-b border-[#111111]/10">
+              <p className="text-sm font-sans text-[#111111]/40">등록된 공간이 없습니다.</p>
             </div>
           ) : (
             places.map((place: any) => (
               <div 
                 key={place.id} 
-                className="py-4 border-b border-black/10 hover:bg-black/5 transition-colors"
+                className="py-4 border-b border-[#111111]/10 hover:bg-[#111111]/5 transition-colors"
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="text-lg font-serif font-bold text-black mb-1">{place.title}</h3>
-                    <p className="text-xs font-sans text-black/40 uppercase tracking-widest">
-                      {place.category} / {place.district || 'SEOUL'}
+                    <h3 className="text-lg font-serif font-bold text-[#111111] mb-1">{place.title}</h3>
+                    <p className="text-xs font-sans text-[#111111]/40">
+                      {place.category} / {place.district || '서울'}
                     </p>
                   </div>
                   <div className="flex gap-3">
                     <Link 
                       href={`/admin/write?id=${place.id}`}
-                      className="text-xs font-sans font-bold text-black uppercase tracking-widest border border-black px-4 py-2 hover:bg-black hover:text-white transition-all"
+                      className="text-xs font-sans font-bold text-[#111111] border border-[#111111] px-4 py-2 hover:bg-[#111111] hover:text-white transition-all"
                     >
-                      Edit
+                      수정
                     </Link>
                   </div>
                 </div>
