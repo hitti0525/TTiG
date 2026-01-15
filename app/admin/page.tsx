@@ -5,6 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { createClient } from '@supabase/supabase-js';
 import ErrorBoundary from '../components/ErrorBoundary';
+import DateFormatter from '../components/DateFormatter';
 
 // 차트 섹션 전체를 동적으로 import (클라이언트 사이드에서만 로드)
 const TrafficSourceChart = dynamic(
@@ -398,28 +399,9 @@ export default function AdminDashboard() {
                           <span className="text-xs font-sans font-bold text-[#111111]">
                             {inquiry?.name || '익명'}
                           </span>
-                      <span className="text-xs font-sans text-[#111111]/40" suppressHydrationWarning>
+                      <span className="text-xs font-sans text-[#111111]/40">
                         {inquiry?.created_at 
-                          ? (() => {
-                              try {
-                                if (isMounted && typeof window !== 'undefined') {
-                                  // 고정된 형식으로 날짜 포맷팅 (타임존 차이 방지)
-                                  const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    timeZone: 'Asia/Seoul'
-                                  });
-                                  return dateFormatter.format(new Date(inquiry.created_at));
-                                }
-                                // 서버에서는 간단한 포맷
-                                return new Date(inquiry.created_at).toISOString().split('T')[0];
-                              } catch {
-                                return '-';
-                              }
-                            })()
+                          ? <DateFormatter dateString={inquiry.created_at} format="full" />
                           : '-'}
                       </span>
                         </div>
