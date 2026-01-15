@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 export default function AdminDashboard() {
   const [places, setPlaces] = useState<any[]>([]);
   const [inquiries, setInquiries] = useState<any[]>([]);
+  const [analyticsData, setAnalyticsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dailyVisitors, setDailyVisitors] = useState(0);
 
@@ -38,12 +39,25 @@ export default function AdminDashboard() {
           }
         }
 
-        // Daily Visitors 계산 (실제 방문자 수 추정)
-        // views_count는 페이지뷰이므로, 실제 방문자 수는 더 적을 수 있음
-        // 한 사람이 평균 3-5개 페이지를 본다고 가정
-        const totalViews = (placesData || []).reduce((sum: number, place: any) => sum + (place.views_count || 0), 0);
-        const estimatedUniqueVisitors = Math.floor(totalViews / 4); // 페이지뷰를 4로 나눠 고유 방문자 추정
-        setDailyVisitors(Math.max(1, Math.floor(estimatedUniqueVisitors / 30))); // 30일 기준 일일 방문자 수
+        // Analytics 데이터 (실제 방문자 추적)
+        try {
+          const analyticsRes = await fetch('/api/analytics');
+          const analyticsResult = await analyticsRes.json();
+          if (analyticsResult.data) {
+            setAnalyticsData(analyticsResult.data);
+            
+            // 오늘 날짜의 방문자 수
+            const today = new Date().toISOString().split('T')[0];
+            const todayData = analyticsResult.data.find((d: any) => d.date === today);
+            setDailyVisitors(todayData?.visitors || 0);
+          }
+        } catch (error) {
+          console.error('Error fetching analytics:', error);
+          // 폴백: views_count 기반 추정
+          const totalViews = (placesData || []).reduce((sum: number, place: any) => sum + (place.views_count || 0), 0);
+          const estimatedUniqueVisitors = Math.floor(totalViews / 4);
+          setDailyVisitors(Math.max(1, Math.floor(estimatedUniqueVisitors / 30)));
+        }
 
         setLoading(false);
       } catch (error) {
@@ -55,29 +69,22 @@ export default function AdminDashboard() {
     fetchData();
   }, [supabaseUrl, supabaseKey]);
 
-  // 최근 7일간 방문 추이 데이터 생성 (실제 views_count 기반, 방문자 수로 변환)
+  // 최근 7일간 방문 추이 데이터 생성 (실제 analytics 데이터 사용)
   const generateLast7DaysData = () => {
     const days = [];
     const today = new Date();
     
-    // 전체 views_count 합계를 기반으로 일일 방문자 수 추정
-    // views_count는 페이지뷰이므로, 실제 방문자 수는 더 적음 (평균 3-4페이지/방문자 가정)
-    const totalViews = places.reduce((sum, place) => sum + (place.views_count || 0), 0);
-    const estimatedTotalVisitors = Math.floor(totalViews / 4); // 페이지뷰를 4로 나눠 고유 방문자 추정
-    const averageDailyVisitors = estimatedTotalVisitors > 0 ? Math.floor(estimatedTotalVisitors / 30) : 0; // 30일 기준
-    
+    // analytics 데이터가 있으면 실제 데이터 사용, 없으면 빈 데이터
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dayName = date.toLocaleDateString('ko-KR', { weekday: 'short' });
       const dayNumber = date.getDate();
+      const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
       
-      // 평균값을 기준으로 약간의 변동성 추가 (주말 효과 포함)
-      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-      const baseVisitors = Math.max(1, averageDailyVisitors || 3); // 최소 1명
-      const variation = isWeekend ? -1 : 0; // 주말에는 약간 감소
-      const randomVariation = Math.floor(Math.random() * 4) - 2; // -2 ~ +2 작은 랜덤 변동
-      const visitors = Math.max(1, baseVisitors + variation + randomVariation); // 최소 1명
+      // analytics 데이터에서 해당 날짜 찾기
+      const dayData = analyticsData.find((d: any) => d.date === dateString);
+      const visitors = dayData?.visitors || 0;
       
       days.push({
         day: `${dayNumber} ${dayName}`,

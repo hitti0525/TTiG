@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 import SiteHeader from "./components/SiteHeader";
+import AnalyticsTracker from "./components/AnalyticsTracker";
 
 const serif = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </noscript>
         
         <SiteHeader />
+        <AnalyticsTracker />
         <main>{children}</main>
       </body>
     </html>
