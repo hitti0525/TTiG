@@ -80,12 +80,38 @@ export default function AdminDashboard() {
           setDailyVisitors(todayData?.visitors || 0);
           
           // 트래픽 소스별 통계
-          if (todayData?.traffic_sources) {
+          try {
+            let trafficSourcesData = todayData?.traffic_sources;
+            
+            // JSONB가 문자열로 올 수 있으므로 파싱 시도
+            if (typeof trafficSourcesData === 'string') {
+              trafficSourcesData = JSON.parse(trafficSourcesData);
+            }
+            
+            if (trafficSourcesData && typeof trafficSourcesData === 'object') {
+              setTrafficSources({
+                organic: Number(trafficSourcesData.organic) || 0,
+                direct: Number(trafficSourcesData.direct) || 0,
+                referral: Number(trafficSourcesData.referral) || 0,
+                social: Number(trafficSourcesData.social) || 0,
+              });
+            } else {
+              // 기본값 설정
+              setTrafficSources({
+                organic: 0,
+                direct: 0,
+                referral: 0,
+                social: 0,
+              });
+            }
+          } catch (error) {
+            console.error('Error parsing traffic sources:', error);
+            // 에러 발생 시 기본값
             setTrafficSources({
-              organic: todayData.traffic_sources.organic || 0,
-              direct: todayData.traffic_sources.direct || 0,
-              referral: todayData.traffic_sources.referral || 0,
-              social: todayData.traffic_sources.social || 0,
+              organic: 0,
+              direct: 0,
+              referral: 0,
+              social: 0,
             });
           }
         }

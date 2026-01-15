@@ -34,7 +34,13 @@ export async function GET(request: NextRequest) {
 
     // 트래픽 소스 분류 (마케터 표준 분류)
     const referrer = request.headers.get('referer') || request.headers.get('referrer') || '';
-    const url = new URL(request.url);
+    let url: URL;
+    try {
+      url = new URL(request.url);
+    } catch (e) {
+      // URL 파싱 실패 시 기본값 사용
+      url = new URL('http://localhost');
+    }
     const utmSource = url.searchParams.get('utm_source');
     const utmMedium = url.searchParams.get('utm_medium');
     
@@ -82,8 +88,13 @@ export async function GET(request: NextRequest) {
           }
           
           // 외부 사이트 (Referral)
-          const currentHost = url.hostname.toLowerCase();
-          if (hostname !== currentHost && !hostname.includes(currentHost)) {
+          try {
+            const currentHost = url.hostname.toLowerCase();
+            if (hostname !== currentHost && !hostname.includes(currentHost)) {
+              return 'referral';
+            }
+          } catch (e) {
+            // URL 파싱 실패 시 Referral로 분류
             return 'referral';
           }
         } catch (e) {
@@ -112,13 +123,25 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching analytics:', fetchError);
     }
 
-    // 기존 traffic_sources JSONB 가져오기
-    const existingTrafficSources = analytics?.traffic_sources || {
+    // 기존 traffic_sources JSONB 가져오기 (문자열일 경우 파싱)
+    let existingTrafficSources: any = {
       organic: 0,
       direct: 0,
       referral: 0,
       social: 0
     };
+    
+    if (analytics?.traffic_sources) {
+      try {
+        if (typeof analytics.traffic_sources === 'string') {
+          existingTrafficSources = JSON.parse(analytics.traffic_sources);
+        } else if (typeof analytics.traffic_sources === 'object') {
+          existingTrafficSources = analytics.traffic_sources;
+        }
+      } catch (e) {
+        console.error('Error parsing traffic_sources:', e);
+      }
+    }
 
     if (!analytics) {
       // 오늘 날짜 레코드가 없으면 생성
