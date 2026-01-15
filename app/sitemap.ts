@@ -39,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/${place.slug || place.id}`,
       lastModified: place.updatedAt ? new Date(place.updatedAt) : new Date(),
       changeFrequency: 'weekly' as const,
-      priority: 0.6,
+      priority: (place.views_count || 0) > 100 ? 0.9 : 0.6, // 인기 공간은 우선순위 높임
     }));
   } catch (error) {
     console.error('Sitemap generation error:', error);
