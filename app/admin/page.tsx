@@ -16,6 +16,29 @@ export default function AdminDashboard() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  // 삭제 핸들러
+  const handleDelete = async (id: string) => {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+    
+    try {
+      const res = await fetch('/api/delete-place', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      
+      if (res.ok) {
+        alert("삭제되었습니다.");
+        setPlaces(places.filter((p: any) => p.id !== id));
+      } else {
+        alert("삭제 실패");
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert("삭제 중 오류가 발생했습니다.");
+    }
+  };
+
   // 데이터 불러오기
   useEffect(() => {
     const fetchData = async () => {
@@ -269,6 +292,12 @@ export default function AdminDashboard() {
                     >
                       수정
                     </Link>
+                    <button 
+                      onClick={() => handleDelete(place.id)}
+                      className="text-xs font-sans font-bold text-[#111111]/60 border border-[#111111]/30 px-4 py-2 hover:bg-[#111111]/10 hover:border-[#111111]/60 transition-all"
+                    >
+                      삭제
+                    </button>
                   </div>
                 </div>
               </div>
