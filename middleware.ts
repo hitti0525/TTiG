@@ -55,10 +55,14 @@ export function middleware(request: NextRequest) {
 }
 
 // 미들웨어가 실행될 경로 지정
-// 더 명확한 패턴으로 수정
+// Next.js 14+ App Router에서 정확한 패턴 사용
 export const config = {
   matcher: [
     '/admin',
     '/admin/:path*', // /admin으로 시작하는 모든 하위 경로
+    '/admin/inquiries',
+    '/admin/posts',
+    '/admin/write',
+    '/admin/edit/:path*',
   ],
 };

@@ -20,6 +20,8 @@ const VisitorTrendChart = dynamic(
 );
 
 export default function DashboardContent() {
+  // 🔒 React Hooks 규칙: 모든 hooks는 항상 같은 순서로 호출되어야 함
+  // early return 전에 모든 hooks를 선언해야 함
   const router = useRouter();
   const [places, setPlaces] = useState<any[]>([]);
   const [inquiries, setInquiries] = useState<any[]>([]);
@@ -33,12 +35,14 @@ export default function DashboardContent() {
     referral: 0,
     social: 0
   });
+  // 최근 7일간 방문 추이 데이터 (모든 hooks를 최상단에 선언)
+  const [last7DaysData, setLast7DaysData] = useState<Array<{ day: string; visitors: number }>>([]);
 
   // Supabase 클라이언트
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // 로그아웃 핸들러
+  // 로그아웃 핸들러 (hooks 이후에 선언)
   const handleLogout = async () => {
     if (!confirm('로그아웃하시겠습니까?')) return;
     
@@ -58,11 +62,6 @@ export default function DashboardContent() {
       alert('로그아웃 중 오류가 발생했습니다.');
     }
   };
-
-  // 클라이언트 마운트 확인 (서버에서는 아무것도 렌더링하지 않음)
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   // 삭제 핸들러
   const handleDelete = async (id: string) => {
@@ -253,11 +252,13 @@ export default function DashboardContent() {
   }, [isClient, supabaseUrl, supabaseKey]);
 
   // 최근 7일간 방문 추이 데이터 생성 (클라이언트에서만 실행)
-  const [last7DaysData, setLast7DaysData] = useState<Array<{ day: string; visitors: number }>>([]);
-
   useEffect(() => {
     // 클라이언트에서만 날짜 포맷팅 실행 (hydration mismatch 방지)
-    if (!isClient || typeof window === 'undefined') return;
+    if (!isClient || typeof window === 'undefined') {
+      // 서버에서는 빈 배열 유지
+      setLast7DaysData([]);
+      return;
+    }
     
     const days = [];
     const today = new Date();
@@ -294,6 +295,46 @@ export default function DashboardContent() {
     setLast7DaysData(days);
   }, [isClient, analyticsData]);
 
+  // 데이터 로딩 useEffect (모든 hooks 선언 후)
+  useEffect(() => {
+    // 클라이언트에서만 데이터 로드
+    if (!isClient) return;
+    
+    // 초기 데이터 로드
+    let isMounted = true;
+    
+    const loadData = async () => {
+      try {
+        await fetchData();
+        if (isMounted) {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error in initial data load:', error);
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    loadData();
+    
+    // 30초마다 자동 새로고침 (실시간 통계 반영)
+    const interval = setInterval(() => {
+      if (isMounted) {
+        fetchData().catch((error) => {
+          console.error('Error in interval fetch:', error);
+        });
+      }
+    }, 30000); // 30초
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [isClient, supabaseUrl, supabaseKey]);
+
+  // 🔒 React Hooks 규칙: 모든 hooks 호출 후에만 early return 가능
   // 서버에서는 완전히 빈 HTML만 반환 (정적 HTML 일치)
   if (!isClient) {
     return null;
@@ -308,10 +349,18 @@ export default function DashboardContent() {
     );
   }
 
-  // 통계 계산 (안전하게)
-  const totalKeeps = Array.isArray(places) 
+  // 통계 계산 (안전하게) - 클라이언트에서만 실행
+  const totalKeeps = isClient && Array.isArray(places) 
     ? places.reduce((sum: number, place: any) => sum + (Number(place?.keeps_count) || 0), 0)
     : 0;
+  
+  // 숫자 포맷팅 헬퍼 (클라이언트에서만 실행)
+  const formatNumber = (num: number): string => {
+    if (!isClient || typeof window === 'undefined') {
+      return num.toString();
+    }
+    return num.toLocaleString();
+  };
 
   return (
     <ErrorBoundary>
@@ -334,14 +383,14 @@ export default function DashboardContent() {
         <div className="grid grid-cols-2 gap-12 mb-16">
           <div>
             <div className="text-xs font-sans text-[#111111]/40 mb-2">총 Keep 수</div>
-            <div className="text-5xl font-sans font-bold text-[#111111] leading-none">
-              {totalKeeps.toLocaleString()}
+            <div className="text-5xl font-sans font-bold text-[#111111] leading-none" suppressHydrationWarning>
+              {formatNumber(totalKeeps)}
             </div>
           </div>
           <div>
             <div className="text-xs font-sans text-[#111111]/40 mb-2">일일 방문자</div>
-            <div className="text-5xl font-sans font-bold text-[#111111] leading-none">
-              {dailyVisitors.toLocaleString()}
+            <div className="text-5xl font-sans font-bold text-[#111111] leading-none" suppressHydrationWarning>
+              {formatNumber(dailyVisitors)}
             </div>
           </div>
         </div>
@@ -352,44 +401,44 @@ export default function DashboardContent() {
           <div className="grid grid-cols-4 gap-6 mb-6">
             <div className="border-t border-[#111111]/10 pt-4">
               <div className="text-xs font-sans text-[#111111]/40 mb-2">검색 엔진</div>
-              <div className="text-3xl font-sans font-bold text-[#111111] leading-none">
+              <div className="text-3xl font-sans font-bold text-[#111111] leading-none" suppressHydrationWarning>
                 {trafficSources?.organic ?? 0}
               </div>
-              <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
-                {dailyVisitors > 0 && trafficSources?.organic 
+              <div className="text-[10px] font-sans text-[#111111]/40 mt-1" suppressHydrationWarning>
+                {isClient && dailyVisitors > 0 && trafficSources?.organic 
                   ? Math.round((Number(trafficSources.organic) / dailyVisitors) * 100) 
                   : 0}%
               </div>
             </div>
             <div className="border-t border-[#111111]/10 pt-4">
               <div className="text-xs font-sans text-[#111111]/40 mb-2">직접 접속</div>
-              <div className="text-3xl font-sans font-bold text-[#111111] leading-none">
+              <div className="text-3xl font-sans font-bold text-[#111111] leading-none" suppressHydrationWarning>
                 {trafficSources?.direct ?? 0}
               </div>
-              <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
-                {dailyVisitors > 0 && trafficSources?.direct 
+              <div className="text-[10px] font-sans text-[#111111]/40 mt-1" suppressHydrationWarning>
+                {isClient && dailyVisitors > 0 && trafficSources?.direct 
                   ? Math.round((Number(trafficSources.direct) / dailyVisitors) * 100) 
                   : 0}%
               </div>
             </div>
             <div className="border-t border-[#111111]/10 pt-4">
               <div className="text-xs font-sans text-[#111111]/40 mb-2">외부 링크</div>
-              <div className="text-3xl font-sans font-bold text-[#111111] leading-none">
+              <div className="text-3xl font-sans font-bold text-[#111111] leading-none" suppressHydrationWarning>
                 {trafficSources?.referral ?? 0}
               </div>
-              <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
-                {dailyVisitors > 0 && trafficSources?.referral 
+              <div className="text-[10px] font-sans text-[#111111]/40 mt-1" suppressHydrationWarning>
+                {isClient && dailyVisitors > 0 && trafficSources?.referral 
                   ? Math.round((Number(trafficSources.referral) / dailyVisitors) * 100) 
                   : 0}%
               </div>
             </div>
             <div className="border-t border-[#111111]/10 pt-4">
               <div className="text-xs font-sans text-[#111111]/40 mb-2">소셜 미디어</div>
-              <div className="text-3xl font-sans font-bold text-[#111111] leading-none">
+              <div className="text-3xl font-sans font-bold text-[#111111] leading-none" suppressHydrationWarning>
                 {trafficSources?.social ?? 0}
               </div>
-              <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
-                {dailyVisitors > 0 && trafficSources?.social 
+              <div className="text-[10px] font-sans text-[#111111]/40 mt-1" suppressHydrationWarning>
+                {isClient && dailyVisitors > 0 && trafficSources?.social 
                   ? Math.round((Number(trafficSources.social) / dailyVisitors) * 100) 
                   : 0}%
               </div>

@@ -17,7 +17,16 @@ const DashboardContent = dynamic(
 
 export default async function AdminDashboard() {
   // 🔒 인증 체크: 세션이 없거나 관리자 권한이 없으면 로그인 페이지로 리다이렉트
-  await requireAdminAuth();
+  // 미들웨어에서 이미 체크하지만, 이중 보안을 위해 서버 컴포넌트에서도 체크
+  const session = await requireAdminAuth();
+  
+  // 디버깅: 프로덕션에서는 제거 가능
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Admin Page] Session verified:', {
+      authenticated: session.authenticated,
+      email: session.email,
+    });
+  }
 
   // 서버에서는 완전히 빈 HTML만 반환 (정적 HTML 일치)
   // 클라이언트에서만 DashboardContent가 렌더링됨
