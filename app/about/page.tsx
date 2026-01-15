@@ -123,16 +123,16 @@ export default function AboutPage() {
           
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-10"></div>
 
-          <div className="container mx-auto relative z-30 pt-32 px-10 pb-32 md:p-20 md:pb-32 flex flex-col md:flex-row justify-between items-end gap-12 w-full text-white">
-            <div className="max-w-2xl">
-              <span className="text-xs font-bold tracking-widest text-gray-300 mb-6 block border-l-2 border-white pl-4">
+          <div className="container mx-auto relative z-30 pt-20 px-6 pb-20 md:pt-32 md:px-10 md:pb-32 md:p-20 md:pb-32 flex flex-col md:flex-row justify-between items-end gap-8 md:gap-12 w-full text-white">
+            <div className="w-full md:max-w-2xl">
+              <span className="text-xs font-bold tracking-widest text-gray-300 mb-4 md:mb-6 block border-l-2 border-white pl-3 md:pl-4">
                 FOR SPACE OWNERS
               </span>
-              <h2 className="text-5xl md:text-7xl font-serif font-bold mb-8 leading-none">
+              <h2 className="text-3xl md:text-5xl lg:text-7xl font-serif font-bold mb-6 md:mb-8 leading-tight md:leading-none">
                 Your space needs<br/>
                 a proper <span className="italic text-gray-300">Title.</span>
               </h2>
-              <p className="text-gray-300 text-sm leading-relaxed" style={{ width: '568px', maxWidth: '100%' }}>
+              <p className="text-gray-300 text-xs md:text-sm leading-relaxed w-full md:w-auto" style={{ maxWidth: '568px' }}>
                 당신의 공간이 가진 언어를 정제하고, 가장 매력적인 한 줄의 문장으로 세상에 소개합니다.<br />
                 단순한 바이럴 마케팅이 아닙니다. 우리는 당신의 공간을 '아카이빙' 합니다.
               </p>
@@ -141,14 +141,14 @@ export default function AboutPage() {
             {!showConfirmation ? (
               <button 
                 onClick={() => setShowConfirmation(true)}
-                className="group relative px-10 py-5 bg-white text-black text-sm font-bold tracking-widest uppercase overflow-hidden transition-all hover:bg-gray-200"
+                className="group relative px-8 py-4 md:px-10 md:py-5 bg-white text-black text-xs md:text-sm font-bold tracking-widest uppercase overflow-hidden transition-all hover:bg-gray-200 w-full md:w-auto"
               >
                 <span className="relative z-10">Apply for Archiving</span>
               </button>
             ) : null}
           </div>
           
-          <div className="absolute bottom-0 left-0 w-full p-6 border-t border-white/10 flex justify-between text-[10px] text-gray-500 uppercase font-bold tracking-widest z-30">
+          <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 border-t border-white/10 flex flex-col md:flex-row justify-between gap-2 md:gap-0 text-[10px] text-gray-500 uppercase font-bold tracking-widest z-30">
             <p>© 2026 TTiG Archive.</p>
             <p>Seoul, Korea</p>
           </div>
