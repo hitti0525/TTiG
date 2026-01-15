@@ -35,27 +35,26 @@ export async function GET() {
         ? new Date(place.updatedAt).toUTCString()
         : new Date().toUTCString();
       
-      // HTML 태그 제거
+      // HTML 태그 제거 후 XML 이스케이프
       let description = place.description 
         ? place.description.replace(/<[^>]*>/g, '').substring(0, 500)
         : place.tagline || '';
       
-      // CDATA 섹션 내부의 ]]> 제거 (CDATA 조기 종료 방지)
-      const title = (place.title || '').replace(/]]>/g, ']]&gt;');
-      const category = (place.category || '').replace(/]]>/g, ']]&gt;');
-      description = description.replace(/]]>/g, ']]&gt;');
-      
+      // 모든 텍스트 필드를 XML 이스케이프 (CDATA 대신)
+      const title = escapeXml(place.title || '');
+      const category = escapeXml(place.category || '');
+      description = escapeXml(description);
       const slug = escapeXml(place.slug || '');
       const imageUrl = place.image ? escapeXml(place.image) : '';
       
       return `    <item>
-      <title><![CDATA[${title}]]></title>
+      <title>${title}</title>
       <link>${baseUrl}/${slug}</link>
-      <description><![CDATA[${description}]]></description>
+      <description>${description}</description>
       <pubDate>${pubDate}</pubDate>
       <guid isPermaLink="true">${baseUrl}/${slug}</guid>
       ${imageUrl ? `<enclosure url="${imageUrl}" type="image/jpeg" />` : ''}
-      <category><![CDATA[${category}]]></category>
+      <category>${category}</category>
     </item>`;
     }).join('\n');
 
