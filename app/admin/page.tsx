@@ -132,27 +132,11 @@ export default function AdminDashboard() {
   const totalKeeps = places.reduce((sum, place) => sum + (place.keeps_count || 0), 0);
 
   return (
-    <div className="min-h-screen bg-[#F5F5F3] p-12 pt-32 max-w-7xl mx-auto">
+    <div className="p-12">
       {/* 헤더 */}
       <div className="mb-12 border-b border-[#111111]/10 pb-6">
         <h1 className="text-4xl font-serif font-bold text-[#111111] mb-3 tracking-tight">대시보드</h1>
-        <div className="flex justify-between items-end">
-          <p className="text-sm font-sans text-[#111111]/60">분석 및 관리</p>
-          <div className="flex gap-3">
-            <Link 
-              href="/admin/inquiries" 
-              className="px-6 py-2 border border-[#111111] text-[#111111] text-xs font-sans font-bold tracking-widest hover:bg-[#111111] hover:text-white transition-all"
-            >
-              문의 내역
-            </Link>
-            <Link 
-              href="/admin/write" 
-              className="bg-[#111111] text-white px-6 py-2 text-xs font-sans font-bold tracking-widest hover:bg-[#111111]/80 transition-all"
-            >
-              + 새 공간
-            </Link>
-          </div>
-        </div>
+        <p className="text-sm font-sans text-[#111111]/60">분석 및 관리</p>
       </div>
 
       {/* 상단: 주요 지표 */}
@@ -264,45 +248,26 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* 공간 목록 (기존 기능 유지) */}
+      {/* 빠른 링크 */}
       <div className="mb-12">
-        <h2 className="text-xl font-serif font-bold text-[#111111] mb-6">공간 목록</h2>
-        <div className="space-y-2">
-          {places.length === 0 ? (
-            <div className="py-12 text-center border-t border-b border-[#111111]/10">
-              <p className="text-sm font-sans text-[#111111]/40">등록된 공간이 없습니다.</p>
-            </div>
-          ) : (
-            places.map((place: any) => (
-              <div 
-                key={place.id} 
-                className="py-4 border-b border-[#111111]/10 hover:bg-[#111111]/5 transition-colors"
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-serif font-bold text-[#111111] mb-1">{place.title}</h3>
-                    <p className="text-xs font-sans text-[#111111]/40">
-                      {place.category} / {place.district || '서울'}
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <Link 
-                      href={`/admin/write?id=${place.id}`}
-                      className="text-xs font-sans font-bold text-[#111111] border border-[#111111] px-4 py-2 hover:bg-[#111111] hover:text-white transition-all"
-                    >
-                      수정
-                    </Link>
-                    <button 
-                      onClick={() => handleDelete(place.id)}
-                      className="text-xs font-sans font-bold text-[#111111]/60 border border-[#111111]/30 px-4 py-2 hover:bg-[#111111]/10 hover:border-[#111111]/60 transition-all"
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+        <h2 className="text-xl font-serif font-bold text-[#111111] mb-6">빠른 링크</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Link
+            href="/admin/posts"
+            className="bg-white border border-[#111111]/10 p-6 rounded-lg hover:bg-[#111111]/5 transition-colors"
+          >
+            <div className="text-2xl mb-2">📝</div>
+            <div className="text-sm font-serif font-bold text-[#111111] mb-1">게시글 목록</div>
+            <div className="text-xs font-sans text-[#111111]/40">모든 공간 통계 보기</div>
+          </Link>
+          <Link
+            href="/admin/inquiries"
+            className="bg-white border border-[#111111]/10 p-6 rounded-lg hover:bg-[#111111]/5 transition-colors"
+          >
+            <div className="text-2xl mb-2">📧</div>
+            <div className="text-sm font-serif font-bold text-[#111111] mb-1">문의 내역</div>
+            <div className="text-xs font-sans text-[#111111]/40">최신 문의 확인</div>
+          </Link>
         </div>
       </div>
     </div>

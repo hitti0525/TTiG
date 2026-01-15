@@ -26,36 +26,28 @@ export default async function AdminInquiries() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F3] p-8 pt-32 max-w-7xl mx-auto">
-      <div className="flex justify-between items-end mb-12 border-b border-black/10 pb-6">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-black">CONTACT INQUIRIES</h1>
-          <p className="text-sm text-gray-500 mt-2">문의 내역을 확인하세요.</p>
-        </div>
-        <Link 
-          href="/admin" 
-          className="text-xs font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-widest"
-        >
-          ← BACK TO DASHBOARD
-        </Link>
+    <div className="p-12">
+      <div className="mb-8">
+        <h1 className="text-4xl font-serif font-bold text-[#111111] mb-3">문의 내역</h1>
+        <p className="text-sm font-sans text-[#111111]/60">문의 내역을 확인하세요</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-lg overflow-hidden border border-[#111111]/10">
         {inquiries && inquiries.length > 0 ? (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-black text-white uppercase tracking-widest text-[10px]">
+          <table className="w-full">
+            <thead className="bg-[#111111]/5 border-b border-[#111111]/10">
               <tr>
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">Email</th>
-                <th className="px-6 py-4">Message</th>
-                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-left text-xs font-sans font-bold text-[#111111] uppercase tracking-widest">일자</th>
+                <th className="px-6 py-4 text-left text-xs font-sans font-bold text-[#111111] uppercase tracking-widest">이름</th>
+                <th className="px-6 py-4 text-left text-xs font-sans font-bold text-[#111111] uppercase tracking-widest">이메일</th>
+                <th className="px-6 py-4 text-left text-xs font-sans font-bold text-[#111111] uppercase tracking-widest">메시지</th>
+                <th className="px-6 py-4 text-center text-xs font-sans font-bold text-[#111111] uppercase tracking-widest">상태</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[#111111]/10">
               {inquiries.map((item: any) => (
-                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-gray-500 text-xs">
+                <tr key={item.id} className="hover:bg-[#111111]/5 transition-colors">
+                  <td className="px-6 py-4 text-sm font-sans text-[#111111]/60">
                     {new Date(item.created_at).toLocaleDateString('ko-KR', {
                       year: 'numeric',
                       month: '2-digit',
@@ -64,20 +56,20 @@ export default async function AdminInquiries() {
                       minute: '2-digit'
                     })}
                   </td>
-                  <td className="px-6 py-4 font-medium">{item.name}</td>
-                  <td className="px-6 py-4 text-gray-600">{item.email}</td>
-                  <td className="px-6 py-4 text-gray-700 max-w-md">
+                  <td className="px-6 py-4 text-sm font-sans font-medium text-[#111111]">{item.name}</td>
+                  <td className="px-6 py-4 text-sm font-sans text-[#111111]/80">{item.email}</td>
+                  <td className="px-6 py-4 text-sm font-sans text-[#111111]/80 max-w-md">
                     <div className="truncate" title={item.message}>
                       {item.message}
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                  <td className="px-6 py-4 text-center">
+                    <span className={`text-xs font-sans font-bold px-2 py-1 ${
                       item.status === 'new' 
-                        ? 'bg-black text-white' 
-                        : 'bg-gray-200 text-gray-600'
+                        ? 'bg-[#111111] text-white' 
+                        : 'bg-[#111111]/10 text-[#111111]/60'
                     }`}>
-                      {item.status === 'new' ? 'NEW' : item.status.toUpperCase()}
+                      {item.status === 'new' ? '신규' : '처리됨'}
                     </span>
                   </td>
                 </tr>
@@ -86,8 +78,8 @@ export default async function AdminInquiries() {
           </table>
         ) : (
           <div className="py-20 text-center">
-            <p className="text-gray-400 mb-2">등록된 문의가 없습니다.</p>
-            <p className="text-xs text-gray-400">
+            <p className="text-sm font-sans text-[#111111]/40 mb-2">등록된 문의가 없습니다.</p>
+            <p className="text-xs font-sans text-[#111111]/40">
               Supabase 설정 후 문의가 표시됩니다.
             </p>
           </div>
@@ -96,21 +88,21 @@ export default async function AdminInquiries() {
 
       {/* Supabase 설정 안내 */}
       {(!supabaseUrl || !supabaseKey) && (
-        <div className="mt-8 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="text-sm font-bold text-yellow-800 mb-2">📝 Supabase 환경 변수 설정 필요</h3>
-          <p className="text-xs text-yellow-700 mb-4">
+        <div className="mt-8 p-6 bg-[#111111]/5 border border-[#111111]/10 rounded-lg">
+          <h3 className="text-sm font-sans font-bold text-[#111111] mb-2">📝 Supabase 환경 변수 설정 필요</h3>
+          <p className="text-xs font-sans text-[#111111]/60 mb-4">
             문의 기능을 사용하려면 .env.local 파일에 Supabase 환경 변수를 설정해주세요.
           </p>
-          <pre className="text-xs bg-yellow-100 p-3 rounded mt-2">
+          <pre className="text-xs font-sans bg-[#111111]/5 p-3 rounded mt-2 text-[#111111]/80">
             NEXT_PUBLIC_SUPABASE_URL=your_project_url{'\n'}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
           </pre>
         </div>
       )}
       {hasError && (
-        <div className="mt-8 p-6 bg-red-50 border border-red-200 rounded-lg">
-          <h3 className="text-sm font-bold text-red-800 mb-2">⚠️ 데이터 조회 오류</h3>
-          <p className="text-xs text-red-700">
+        <div className="mt-8 p-6 bg-[#111111]/5 border border-[#111111]/10 rounded-lg">
+          <h3 className="text-sm font-sans font-bold text-[#111111] mb-2">⚠️ 데이터 조회 오류</h3>
+          <p className="text-xs font-sans text-[#111111]/60">
             문의 데이터를 불러오는 중 오류가 발생했습니다. 콘솔을 확인해주세요.
           </p>
         </div>
