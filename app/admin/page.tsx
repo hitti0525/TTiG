@@ -206,85 +206,104 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-4 gap-6 mb-6">
           <div className="border-t border-[#111111]/10 pt-4">
             <div className="text-xs font-sans text-[#111111]/40 mb-2">검색 엔진</div>
-            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">{trafficSources.organic}</div>
+            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">
+              {trafficSources?.organic ?? 0}
+            </div>
             <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
-              {dailyVisitors > 0 ? Math.round((trafficSources.organic / dailyVisitors) * 100) : 0}%
+              {dailyVisitors > 0 && trafficSources?.organic 
+                ? Math.round((Number(trafficSources.organic) / dailyVisitors) * 100) 
+                : 0}%
             </div>
           </div>
           <div className="border-t border-[#111111]/10 pt-4">
             <div className="text-xs font-sans text-[#111111]/40 mb-2">직접 접속</div>
-            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">{trafficSources.direct}</div>
+            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">
+              {trafficSources?.direct ?? 0}
+            </div>
             <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
-              {dailyVisitors > 0 ? Math.round((trafficSources.direct / dailyVisitors) * 100) : 0}%
+              {dailyVisitors > 0 && trafficSources?.direct 
+                ? Math.round((Number(trafficSources.direct) / dailyVisitors) * 100) 
+                : 0}%
             </div>
           </div>
           <div className="border-t border-[#111111]/10 pt-4">
             <div className="text-xs font-sans text-[#111111]/40 mb-2">외부 링크</div>
-            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">{trafficSources.referral}</div>
+            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">
+              {trafficSources?.referral ?? 0}
+            </div>
             <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
-              {dailyVisitors > 0 ? Math.round((trafficSources.referral / dailyVisitors) * 100) : 0}%
+              {dailyVisitors > 0 && trafficSources?.referral 
+                ? Math.round((Number(trafficSources.referral) / dailyVisitors) * 100) 
+                : 0}%
             </div>
           </div>
           <div className="border-t border-[#111111]/10 pt-4">
             <div className="text-xs font-sans text-[#111111]/40 mb-2">소셜 미디어</div>
-            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">{trafficSources.social}</div>
+            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">
+              {trafficSources?.social ?? 0}
+            </div>
             <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
-              {dailyVisitors > 0 ? Math.round((trafficSources.social / dailyVisitors) * 100) : 0}%
+              {dailyVisitors > 0 && trafficSources?.social 
+                ? Math.round((Number(trafficSources.social) / dailyVisitors) * 100) 
+                : 0}%
             </div>
           </div>
         </div>
         
         {/* 트래픽 소스 막대 그래프 */}
-        <div className="h-48 border-t border-b border-[#111111]/10 pt-6 pb-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart 
-              data={[
-                { name: '검색', value: trafficSources.organic, label: '검색 엔진' },
-                { name: '직접', value: trafficSources.direct, label: '직접 접속' },
-                { name: '외부', value: trafficSources.referral, label: '외부 링크' },
-                { name: '소셜', value: trafficSources.social, label: '소셜 미디어' },
-              ]}
-              margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
-            >
-              <CartesianGrid 
-                strokeDasharray="0" 
-                stroke="#e5e5e5" 
-                vertical={false}
-                strokeWidth={0.5}
-              />
-              <XAxis 
-                dataKey="name" 
-                tick={{ fontSize: 11, fill: '#666', fontFamily: 'sans-serif' }}
-                stroke="#999"
-                strokeWidth={0.5}
-              />
-              <YAxis 
-                tick={{ fontSize: 11, fill: '#666', fontFamily: 'sans-serif' }}
-                stroke="#999"
-                strokeWidth={0.5}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#F5F5F3', 
-                  border: '1px solid #111111',
-                  borderRadius: '0',
-                  fontSize: '11px',
-                  fontFamily: 'sans-serif',
-                  padding: '8px 12px'
-                }}
-                formatter={(value: number, name: string, props: any) => [
-                  `${value}명 (${dailyVisitors > 0 ? Math.round((value / dailyVisitors) * 100) : 0}%)`,
-                  props.payload.label
+        {trafficSources && (
+          <div className="h-48 border-t border-b border-[#111111]/10 pt-6 pb-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart 
+                data={[
+                  { name: '검색', value: Number(trafficSources?.organic) || 0, label: '검색 엔진' },
+                  { name: '직접', value: Number(trafficSources?.direct) || 0, label: '직접 접속' },
+                  { name: '외부', value: Number(trafficSources?.referral) || 0, label: '외부 링크' },
+                  { name: '소셜', value: Number(trafficSources?.social) || 0, label: '소셜 미디어' },
                 ]}
-              />
-              <Bar 
-                dataKey="value" 
-                fill="#111111"
-                radius={[0, 0, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+                margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+              >
+                <CartesianGrid 
+                  strokeDasharray="0" 
+                  stroke="#e5e5e5" 
+                  vertical={false}
+                  strokeWidth={0.5}
+                />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 11, fill: '#666', fontFamily: 'sans-serif' }}
+                  stroke="#999"
+                  strokeWidth={0.5}
+                />
+                <YAxis 
+                  tick={{ fontSize: 11, fill: '#666', fontFamily: 'sans-serif' }}
+                  stroke="#999"
+                  strokeWidth={0.5}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#F5F5F3', 
+                    border: '1px solid #111111',
+                    borderRadius: '0',
+                    fontSize: '11px',
+                    fontFamily: 'sans-serif',
+                    padding: '8px 12px'
+                  }}
+                  formatter={(value: number, name: string, props: any) => {
+                    const val = Number(value) || 0;
+                    const percent = dailyVisitors > 0 ? Math.round((val / dailyVisitors) * 100) : 0;
+                    return [`${val}명 (${percent}%)`, props?.payload?.label || ''];
+                  }}
+                />
+                <Bar 
+                  dataKey="value" 
+                  fill="#111111"
+                  radius={[0, 0, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       {/* 중앙: 최근 7일간 방문 추이 선 그래프 */}
