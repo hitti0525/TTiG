@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { createClient } from '@supabase/supabase-js';
 
 export default function AdminDashboard() {
@@ -11,6 +11,12 @@ export default function AdminDashboard() {
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dailyVisitors, setDailyVisitors] = useState(0);
+  const [trafficSources, setTrafficSources] = useState({
+    organic: 0,
+    direct: 0,
+    referral: 0,
+    social: 0
+  });
 
   // Supabase 클라이언트
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -68,10 +74,20 @@ export default function AdminDashboard() {
         if (analyticsResult.data) {
           setAnalyticsData(analyticsResult.data);
           
-          // 오늘 날짜의 방문자 수
+          // 오늘 날짜의 방문자 수 및 트래픽 소스
           const today = new Date().toISOString().split('T')[0];
           const todayData = analyticsResult.data.find((d: any) => d.date === today);
           setDailyVisitors(todayData?.visitors || 0);
+          
+          // 트래픽 소스별 통계
+          if (todayData?.traffic_sources) {
+            setTrafficSources({
+              organic: todayData.traffic_sources.organic || 0,
+              direct: todayData.traffic_sources.direct || 0,
+              referral: todayData.traffic_sources.referral || 0,
+              social: todayData.traffic_sources.social || 0,
+            });
+          }
         }
       } catch (error) {
         console.error('Error fetching analytics:', error);
@@ -155,6 +171,93 @@ export default function AdminDashboard() {
         <div>
           <div className="text-xs font-sans text-[#111111]/40 mb-2">일일 방문자</div>
           <div className="text-5xl font-sans font-bold text-[#111111] leading-none">{dailyVisitors.toLocaleString()}</div>
+        </div>
+      </div>
+
+      {/* 트래픽 소스별 통계 */}
+      <div className="mb-16">
+        <h2 className="text-xl font-serif font-bold text-[#111111] mb-6">트래픽 소스 (오늘)</h2>
+        <div className="grid grid-cols-4 gap-6 mb-6">
+          <div className="border-t border-[#111111]/10 pt-4">
+            <div className="text-xs font-sans text-[#111111]/40 mb-2">검색 엔진</div>
+            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">{trafficSources.organic}</div>
+            <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
+              {dailyVisitors > 0 ? Math.round((trafficSources.organic / dailyVisitors) * 100) : 0}%
+            </div>
+          </div>
+          <div className="border-t border-[#111111]/10 pt-4">
+            <div className="text-xs font-sans text-[#111111]/40 mb-2">직접 접속</div>
+            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">{trafficSources.direct}</div>
+            <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
+              {dailyVisitors > 0 ? Math.round((trafficSources.direct / dailyVisitors) * 100) : 0}%
+            </div>
+          </div>
+          <div className="border-t border-[#111111]/10 pt-4">
+            <div className="text-xs font-sans text-[#111111]/40 mb-2">외부 링크</div>
+            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">{trafficSources.referral}</div>
+            <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
+              {dailyVisitors > 0 ? Math.round((trafficSources.referral / dailyVisitors) * 100) : 0}%
+            </div>
+          </div>
+          <div className="border-t border-[#111111]/10 pt-4">
+            <div className="text-xs font-sans text-[#111111]/40 mb-2">소셜 미디어</div>
+            <div className="text-3xl font-sans font-bold text-[#111111] leading-none">{trafficSources.social}</div>
+            <div className="text-[10px] font-sans text-[#111111]/40 mt-1">
+              {dailyVisitors > 0 ? Math.round((trafficSources.social / dailyVisitors) * 100) : 0}%
+            </div>
+          </div>
+        </div>
+        
+        {/* 트래픽 소스 막대 그래프 */}
+        <div className="h-48 border-t border-b border-[#111111]/10 pt-6 pb-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart 
+              data={[
+                { name: '검색', value: trafficSources.organic, label: '검색 엔진' },
+                { name: '직접', value: trafficSources.direct, label: '직접 접속' },
+                { name: '외부', value: trafficSources.referral, label: '외부 링크' },
+                { name: '소셜', value: trafficSources.social, label: '소셜 미디어' },
+              ]}
+              margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+            >
+              <CartesianGrid 
+                strokeDasharray="0" 
+                stroke="#e5e5e5" 
+                vertical={false}
+                strokeWidth={0.5}
+              />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fontSize: 11, fill: '#666', fontFamily: 'sans-serif' }}
+                stroke="#999"
+                strokeWidth={0.5}
+              />
+              <YAxis 
+                tick={{ fontSize: 11, fill: '#666', fontFamily: 'sans-serif' }}
+                stroke="#999"
+                strokeWidth={0.5}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#F5F5F3', 
+                  border: '1px solid #111111',
+                  borderRadius: '0',
+                  fontSize: '11px',
+                  fontFamily: 'sans-serif',
+                  padding: '8px 12px'
+                }}
+                formatter={(value: number, name: string, props: any) => [
+                  `${value}명 (${dailyVisitors > 0 ? Math.round((value / dailyVisitors) * 100) : 0}%)`,
+                  props.payload.label
+                ]}
+              />
+              <Bar 
+                dataKey="value" 
+                fill="#111111"
+                radius={[0, 0, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 

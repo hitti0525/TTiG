@@ -32,6 +32,71 @@ export async function GET(request: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseKey);
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
 
+    // 트래픽 소스 분류 (마케터 표준 분류)
+    const referrer = request.headers.get('referer') || request.headers.get('referrer') || '';
+    const url = new URL(request.url);
+    const utmSource = url.searchParams.get('utm_source');
+    const utmMedium = url.searchParams.get('utm_medium');
+    
+    // 소스 분류 함수
+    function classifyTrafficSource(): 'organic' | 'direct' | 'referral' | 'social' {
+      // UTM 파라미터 우선
+      if (utmMedium) {
+        if (utmMedium.toLowerCase().includes('social') || 
+            ['facebook', 'instagram', 'twitter', 'linkedin', 'kakao', 'naver'].includes(utmSource?.toLowerCase() || '')) {
+          return 'social';
+        }
+        if (utmMedium.toLowerCase() === 'organic' || utmMedium.toLowerCase() === 'search') {
+          return 'organic';
+        }
+        if (utmMedium.toLowerCase() === 'referral') {
+          return 'referral';
+        }
+      }
+      
+      // Referrer 분석
+      if (referrer) {
+        try {
+          const referrerUrl = new URL(referrer);
+          const hostname = referrerUrl.hostname.toLowerCase();
+          
+          // 검색 엔진 (Organic)
+          const searchEngines = [
+            'google.com', 'google.co.kr', 'google.co.jp',
+            'naver.com', 'search.naver.com',
+            'daum.net', 'search.daum.net',
+            'bing.com', 'yahoo.com', 'duckduckgo.com'
+          ];
+          if (searchEngines.some(se => hostname.includes(se))) {
+            return 'organic';
+          }
+          
+          // 소셜 미디어
+          const socialPlatforms = [
+            'facebook.com', 'instagram.com', 'twitter.com', 'x.com',
+            'linkedin.com', 'pinterest.com', 'youtube.com',
+            'kakao.com', 'kakaocorp.com', 'brunch.co.kr'
+          ];
+          if (socialPlatforms.some(sp => hostname.includes(sp))) {
+            return 'social';
+          }
+          
+          // 외부 사이트 (Referral)
+          const currentHost = url.hostname.toLowerCase();
+          if (hostname !== currentHost && !hostname.includes(currentHost)) {
+            return 'referral';
+          }
+        } catch (e) {
+          // URL 파싱 실패 시 Direct로 분류
+        }
+      }
+      
+      // 기본값: Direct (referrer 없음, 북마크, 직접 입력 등)
+      return 'direct';
+    }
+    
+    const trafficSource = classifyTrafficSource();
+
     // 쿠키에서 방문자 ID 확인 (24시간 유지)
     const visitorId = request.cookies.get('visitor_id')?.value;
     const isNewVisitor = !visitorId;
@@ -47,14 +112,28 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching analytics:', fetchError);
     }
 
+    // 기존 traffic_sources JSONB 가져오기
+    const existingTrafficSources = analytics?.traffic_sources || {
+      organic: 0,
+      direct: 0,
+      referral: 0,
+      social: 0
+    };
+
     if (!analytics) {
       // 오늘 날짜 레코드가 없으면 생성
+      const newTrafficSources = { ...existingTrafficSources };
+      if (isNewVisitor) {
+        newTrafficSources[trafficSource] = (newTrafficSources[trafficSource] || 0) + 1;
+      }
+      
       const { data: newAnalytics, error: insertError } = await supabase
         .from('analytics')
         .insert({
           date: today,
           visitors: isNewVisitor ? 1 : 0,
           page_views: 1,
+          traffic_sources: newTrafficSources,
         })
         .select()
         .single();
@@ -73,6 +152,11 @@ export async function GET(request: NextRequest) {
 
       if (isNewVisitor) {
         updateData.visitors = (analytics.visitors || 0) + 1;
+        
+        // 트래픽 소스별 방문자 수 업데이트
+        const updatedTrafficSources = { ...existingTrafficSources };
+        updatedTrafficSources[trafficSource] = (updatedTrafficSources[trafficSource] || 0) + 1;
+        updateData.traffic_sources = updatedTrafficSources;
       }
 
       const { error: updateError } = await supabase
@@ -86,12 +170,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 최종 traffic_sources 가져오기
+    const finalTrafficSources = analytics.traffic_sources || existingTrafficSources;
+    
     // 응답 헤더에 쿠키 설정 (24시간 유지)
     const response = NextResponse.json({ 
       success: true, 
       isNewVisitor,
       visitors: analytics.visitors + (isNewVisitor ? 1 : 0),
-      pageViews: analytics.page_views + 1
+      pageViews: analytics.page_views + 1,
+      trafficSource,
+      trafficSources: finalTrafficSources
     });
 
     if (isNewVisitor) {
