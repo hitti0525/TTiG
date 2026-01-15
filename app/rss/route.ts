@@ -5,6 +5,16 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// XML 특수 문자 이스케이프 함수
+function escapeXml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 export async function GET() {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ttig.kr';
@@ -25,20 +35,27 @@ export async function GET() {
         ? new Date(place.updatedAt).toUTCString()
         : new Date().toUTCString();
       
-      const description = place.description 
+      // HTML 태그 제거
+      let description = place.description 
         ? place.description.replace(/<[^>]*>/g, '').substring(0, 500)
         : place.tagline || '';
       
-      const imageUrl = place.image || '';
+      // CDATA 섹션 내부의 ]]> 제거 (CDATA 조기 종료 방지)
+      const title = (place.title || '').replace(/]]>/g, ']]&gt;');
+      const category = (place.category || '').replace(/]]>/g, ']]&gt;');
+      description = description.replace(/]]>/g, ']]&gt;');
+      
+      const slug = escapeXml(place.slug || '');
+      const imageUrl = place.image ? escapeXml(place.image) : '';
       
       return `    <item>
-      <title><![CDATA[${place.title}]]></title>
-      <link>${baseUrl}/${place.slug}</link>
+      <title><![CDATA[${title}]]></title>
+      <link>${baseUrl}/${slug}</link>
       <description><![CDATA[${description}]]></description>
       <pubDate>${pubDate}</pubDate>
-      <guid isPermaLink="true">${baseUrl}/${place.slug}</guid>
+      <guid isPermaLink="true">${baseUrl}/${slug}</guid>
       ${imageUrl ? `<enclosure url="${imageUrl}" type="image/jpeg" />` : ''}
-      <category><![CDATA[${place.category}]]></category>
+      <category><![CDATA[${category}]]></category>
     </item>`;
     }).join('\n');
 
