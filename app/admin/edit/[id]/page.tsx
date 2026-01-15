@@ -4,7 +4,47 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
-export default function EditPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+// 인증 체크 컴포넌트
+function AuthCheck({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/session');
+        const data = await res.json();
+        if (data.authenticated) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+          router.push('/login');
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setIsAuthenticated(false);
+        router.push('/login');
+      }
+    };
+    checkAuth();
+  }, [router]);
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F3] flex items-center justify-center">
+        <p className="text-[#111111] font-sans text-sm">인증 확인 중...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+function EditPageContent({ params }: { params: Promise<{ id: string }> | { id: string } }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState<string | null>(null);
@@ -265,5 +305,13 @@ export default function EditPage({ params }: { params: Promise<{ id: string }> |
         </form>
       </div>
     </div>
+  );
+}
+
+export default function EditPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  return (
+    <AuthCheck>
+      <EditPageContent params={params} />
+    </AuthCheck>
   );
 }

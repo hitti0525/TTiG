@@ -1,8 +1,11 @@
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import DateFormatter from '../components/DateFormatter';
+import { requireAdminAuth } from '@/lib/auth';
 
 export default async function AdminInquiries() {
+  // 🔒 인증 체크: 세션이 없거나 관리자 권한이 없으면 로그인 페이지로 리다이렉트
+  await requireAdminAuth();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   

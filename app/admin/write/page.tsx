@@ -5,6 +5,46 @@ import Link from 'next/link';
 import TagInput from '@/app/components/TagInput';
 import ImageUpload from '@/app/components/ImageUpload';
 
+// 인증 체크 컴포넌트
+function AuthCheck({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/session');
+        const data = await res.json();
+        if (data.authenticated) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+          router.push('/login');
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setIsAuthenticated(false);
+        router.push('/login');
+      }
+    };
+    checkAuth();
+  }, [router]);
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F3] flex items-center justify-center">
+        <p className="text-[#111111] font-sans text-sm">인증 확인 중...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
 // 1. 카테고리별 태그 데이터 정의 (객체 형태)
 const TAGS_BY_CATEGORY: Record<string, string[]> = {
   CAFE: [
@@ -299,7 +339,7 @@ function WriteForm() {
 }
 
 // 외부 컴포넌트: Suspense로 감싸기
-export default function WritePage() {
+function WritePageContent() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#F5F5F3] p-8 pt-32 flex justify-center text-[#111]">
