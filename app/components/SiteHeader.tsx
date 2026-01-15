@@ -22,6 +22,11 @@ export default function SiteHeader({ isDarkSlide = false }: SiteHeaderProps) {
   const [isDarkBackground, setIsDarkBackground] = useState(false);
   const pathname = usePathname();
 
+  // Admin 페이지에서는 헤더 숨기기
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
