@@ -28,15 +28,21 @@ export default function AdminPosts() {
     );
   }
 
-  // 날짜 포맷팅
+  // 날짜 포맷팅 (고정된 형식으로 타임존 차이 방지)
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
+    if (typeof window === 'undefined') {
+      // 서버에서는 간단한 포맷
+      return new Date(dateString).toISOString().split('T')[0];
+    }
+    // 클라이언트에서는 고정된 형식 사용
+    const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
+      timeZone: 'Asia/Seoul'
     });
+    return dateFormatter.format(new Date(dateString));
   };
 
   return (
@@ -97,17 +103,23 @@ export default function AdminPosts() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <span className="text-sm font-sans font-bold text-[#111111]">
-                        {(place.views_count || 0).toLocaleString()}
+                        {typeof window !== 'undefined' 
+                          ? (place.views_count || 0).toLocaleString() 
+                          : (place.views_count || 0).toString()}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <span className="text-sm font-sans font-bold text-[#111111]">
-                        {(place.keeps_count || 0).toLocaleString()}
+                        {typeof window !== 'undefined' 
+                          ? (place.keeps_count || 0).toLocaleString() 
+                          : (place.keeps_count || 0).toString()}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <span className="text-sm font-sans font-bold text-[#111111]">
-                        {(place.shares_count || 0).toLocaleString()}
+                        {typeof window !== 'undefined' 
+                          ? (place.shares_count || 0).toLocaleString() 
+                          : (place.shares_count || 0).toString()}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">

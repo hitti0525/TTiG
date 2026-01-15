@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { createClient } from '@supabase/supabase-js';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 // 차트 섹션 전체를 동적으로 import (클라이언트 사이드에서만 로드)
 const TrafficSourceChart = dynamic(
@@ -21,6 +22,7 @@ export default function AdminDashboard() {
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
   const [dailyVisitors, setDailyVisitors] = useState(0);
   const [trafficSources, setTrafficSources] = useState({
     organic: 0,
@@ -183,19 +185,27 @@ export default function AdminDashboard() {
     }
   };
 
+  // 클라이언트 마운트 확인 (hydration mismatch 방지)
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    // 클라이언트에서만 데이터 로드
+    if (!isMounted) return;
+    
     // 초기 데이터 로드
-    let mounted = true;
+    let isMounted = true;
     
     const loadData = async () => {
       try {
         await fetchData();
-        if (mounted) {
+        if (isMounted) {
           setLoading(false);
         }
       } catch (error) {
         console.error('Error in initial data load:', error);
-        if (mounted) {
+        if (isMounted) {
           setLoading(false);
         }
       }
@@ -205,7 +215,7 @@ export default function AdminDashboard() {
     
     // 30초마다 자동 새로고침 (실시간 통계 반영)
     const interval = setInterval(() => {
-      if (mounted) {
+      if (isMounted) {
         fetchData().catch((error) => {
           console.error('Error in interval fetch:', error);
         });
@@ -213,23 +223,37 @@ export default function AdminDashboard() {
     }, 30000); // 30초
 
     return () => {
-      mounted = false;
+      isMounted = false;
       clearInterval(interval);
     };
-  }, [supabaseUrl, supabaseKey]);
+  }, [isMounted, supabaseUrl, supabaseKey]);
 
-  // 최근 7일간 방문 추이 데이터 생성 (실제 analytics 데이터 사용)
-  const generateLast7DaysData = () => {
+  // 최근 7일간 방문 추이 데이터 생성 (클라이언트에서만 실행)
+  const [last7DaysData, setLast7DaysData] = useState<Array<{ day: string; visitors: number }>>([]);
+
+  useEffect(() => {
+    // 클라이언트에서만 날짜 포맷팅 실행 (hydration mismatch 방지)
+    if (!isMounted || typeof window === 'undefined') return;
+    
     const days = [];
     const today = new Date();
     
     // analytics 데이터가 없어도 7일간의 빈 데이터 생성 (에러 방지)
     const safeAnalyticsData = Array.isArray(analyticsData) ? analyticsData : [];
     
+    // 고정된 날짜 포맷터 (타임존 차이 방지)
+    const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
+      weekday: 'short',
+      timeZone: 'Asia/Seoul'
+    });
+    
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const dayName = date.toLocaleDateString('ko-KR', { weekday: 'short' });
+      date.setHours(0, 0, 0, 0); // 시간을 0으로 고정
+      
+      // 고정된 형식으로 날짜 포맷팅
+      const dayName = dateFormatter.format(date);
       const dayNumber = date.getDate();
       const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
       
@@ -243,12 +267,12 @@ export default function AdminDashboard() {
       });
     }
     
-    return days;
-  };
+    setLast7DaysData(days);
+  }, [isMounted, analyticsData]);
 
-  const last7DaysData = generateLast7DaysData();
-
-  if (loading) {
+  // 클라이언트에서만 렌더링 (hydration mismatch 방지)
+  // isMounted가 true일 때만 전체 대시보드 UI를 렌더링
+  if (!isMounted || loading) {
     return (
       <div className="min-h-screen bg-[#F5F5F3] p-8 pt-32 max-w-7xl mx-auto flex items-center justify-center">
         <p className="text-[#111111] font-sans text-sm">로딩 중...</p>
@@ -262,7 +286,8 @@ export default function AdminDashboard() {
     : 0;
 
   return (
-    <div className="p-12">
+    <ErrorBoundary>
+      <div className="p-12" suppressHydrationWarning>
       {/* 헤더 */}
       <div className="mb-12 border-b border-[#111111]/10 pb-6">
         <h1 className="text-4xl font-serif font-bold text-[#111111] mb-3 tracking-tight">대시보드</h1>
@@ -273,11 +298,15 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 gap-12 mb-16">
         <div>
           <div className="text-xs font-sans text-[#111111]/40 mb-2">총 Keep 수</div>
-          <div className="text-5xl font-sans font-bold text-[#111111] leading-none">{totalKeeps.toLocaleString()}</div>
+          <div className="text-5xl font-sans font-bold text-[#111111] leading-none" suppressHydrationWarning>
+            {typeof window !== 'undefined' ? totalKeeps.toLocaleString() : totalKeeps.toString()}
+          </div>
         </div>
         <div>
           <div className="text-xs font-sans text-[#111111]/40 mb-2">일일 방문자</div>
-          <div className="text-5xl font-sans font-bold text-[#111111] leading-none">{dailyVisitors.toLocaleString()}</div>
+          <div className="text-5xl font-sans font-bold text-[#111111] leading-none" suppressHydrationWarning>
+            {typeof window !== 'undefined' ? dailyVisitors.toLocaleString() : dailyVisitors.toString()}
+          </div>
         </div>
       </div>
 
@@ -369,17 +398,30 @@ export default function AdminDashboard() {
                           <span className="text-xs font-sans font-bold text-[#111111]">
                             {inquiry?.name || '익명'}
                           </span>
-                          <span className="text-xs font-sans text-[#111111]/40">
-                            {inquiry?.created_at 
-                              ? new Date(inquiry.created_at).toLocaleDateString('ko-KR', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })
-                              : '-'}
-                          </span>
+                      <span className="text-xs font-sans text-[#111111]/40" suppressHydrationWarning>
+                        {inquiry?.created_at 
+                          ? (() => {
+                              try {
+                                if (isMounted && typeof window !== 'undefined') {
+                                  // 고정된 형식으로 날짜 포맷팅 (타임존 차이 방지)
+                                  const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    timeZone: 'Asia/Seoul'
+                                  });
+                                  return dateFormatter.format(new Date(inquiry.created_at));
+                                }
+                                // 서버에서는 간단한 포맷
+                                return new Date(inquiry.created_at).toISOString().split('T')[0];
+                              } catch {
+                                return '-';
+                              }
+                            })()
+                          : '-'}
+                      </span>
                         </div>
                         <p className="text-sm font-sans text-[#111111]/80 leading-relaxed">
                           {inquiry?.message || '-'}
@@ -428,6 +470,7 @@ export default function AdminDashboard() {
           </Link>
         </div>
       </div>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

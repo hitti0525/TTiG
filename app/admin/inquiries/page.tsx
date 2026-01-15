@@ -47,14 +47,27 @@ export default async function AdminInquiries() {
             <tbody className="divide-y divide-[#111111]/10">
               {inquiries.map((item: any) => (
                 <tr key={item.id} className="hover:bg-[#111111]/5 transition-colors">
-                  <td className="px-6 py-4 text-sm font-sans text-[#111111]/60">
-                    {new Date(item.created_at).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                  <td className="px-6 py-4 text-sm font-sans text-[#111111]/60" suppressHydrationWarning>
+                    {(() => {
+                      try {
+                        if (typeof window !== 'undefined') {
+                          // 고정된 형식으로 날짜 포맷팅 (타임존 차이 방지)
+                          const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZone: 'Asia/Seoul'
+                          });
+                          return dateFormatter.format(new Date(item.created_at));
+                        }
+                        // 서버에서는 간단한 포맷
+                        return new Date(item.created_at).toISOString().split('T')[0];
+                      } catch {
+                        return '-';
+                      }
+                    })()}
                   </td>
                   <td className="px-6 py-4 text-sm font-sans font-medium text-[#111111]">{item.name}</td>
                   <td className="px-6 py-4 text-sm font-sans text-[#111111]/80">{item.email}</td>
