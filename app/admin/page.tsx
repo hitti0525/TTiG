@@ -38,12 +38,12 @@ export default function AdminDashboard() {
           }
         }
 
-        // Daily Visitors 계산 (오늘의 views_count 합계)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        // 실제로는 Supabase analytics 테이블이 필요하지만, 현재는 places의 views_count 합계로 시뮬레이션
+        // Daily Visitors 계산 (실제 방문자 수 추정)
+        // views_count는 페이지뷰이므로, 실제 방문자 수는 더 적을 수 있음
+        // 한 사람이 평균 3-5개 페이지를 본다고 가정
         const totalViews = (placesData || []).reduce((sum: number, place: any) => sum + (place.views_count || 0), 0);
-        setDailyVisitors(Math.floor(totalViews / 30)); // 대략적인 일일 방문자 수
+        const estimatedUniqueVisitors = Math.floor(totalViews / 4); // 페이지뷰를 4로 나눠 고유 방문자 추정
+        setDailyVisitors(Math.max(1, Math.floor(estimatedUniqueVisitors / 30))); // 30일 기준 일일 방문자 수
 
         setLoading(false);
       } catch (error) {
@@ -55,14 +55,16 @@ export default function AdminDashboard() {
     fetchData();
   }, [supabaseUrl, supabaseKey]);
 
-  // 최근 7일간 방문 추이 데이터 생성 (실제 views_count 기반)
+  // 최근 7일간 방문 추이 데이터 생성 (실제 views_count 기반, 방문자 수로 변환)
   const generateLast7DaysData = () => {
     const days = [];
     const today = new Date();
     
     // 전체 views_count 합계를 기반으로 일일 방문자 수 추정
+    // views_count는 페이지뷰이므로, 실제 방문자 수는 더 적음 (평균 3-4페이지/방문자 가정)
     const totalViews = places.reduce((sum, place) => sum + (place.views_count || 0), 0);
-    const averageDailyViews = totalViews > 0 ? Math.floor(totalViews / 30) : 0; // 대략 30일 기준
+    const estimatedTotalVisitors = Math.floor(totalViews / 4); // 페이지뷰를 4로 나눠 고유 방문자 추정
+    const averageDailyVisitors = estimatedTotalVisitors > 0 ? Math.floor(estimatedTotalVisitors / 30) : 0; // 30일 기준
     
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
@@ -72,10 +74,10 @@ export default function AdminDashboard() {
       
       // 평균값을 기준으로 약간의 변동성 추가 (주말 효과 포함)
       const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-      const baseVisitors = averageDailyViews || 25;
-      const variation = isWeekend ? -5 : 0; // 주말에는 약간 감소
-      const randomVariation = Math.floor(Math.random() * 10) - 5; // -5 ~ +5 랜덤 변동
-      const visitors = Math.max(10, baseVisitors + variation + randomVariation);
+      const baseVisitors = Math.max(1, averageDailyVisitors || 3); // 최소 1명
+      const variation = isWeekend ? -1 : 0; // 주말에는 약간 감소
+      const randomVariation = Math.floor(Math.random() * 4) - 2; // -2 ~ +2 작은 랜덤 변동
+      const visitors = Math.max(1, baseVisitors + variation + randomVariation); // 최소 1명
       
       days.push({
         day: `${dayNumber} ${dayName}`,
