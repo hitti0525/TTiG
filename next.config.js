@@ -7,15 +7,6 @@ const nextConfig = {
       { protocol: 'https', hostname: 'via.placeholder.com' },
     ],
   },
-  async redirects() {
-    return [
-      {
-        source: '/rss.xml',
-        destination: '/rss',
-        permanent: true,
-      },
-    ];
-  },
 };
 
 module.exports = nextConfig;

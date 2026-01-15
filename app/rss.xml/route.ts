@@ -1,6 +1,10 @@
 import { getTemplates } from '@/lib/data-source';
 import { NextResponse } from 'next/server';
 
+// 동적 라우팅 강제
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET() {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ttig.kr';
