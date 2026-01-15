@@ -16,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko" className={`${serif.variable} ${sans.variable}`}>
       <head>
         {<meta name="naver-site-verification" content="7ae6701c1769629c3e3348a61aefe08ef08ee8d7" />}
+        <link rel="alternate" type="application/rss+xml" title="TTiG Archive RSS Feed" href="https://ttig.kr/rss.xml" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
