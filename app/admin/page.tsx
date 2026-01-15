@@ -40,56 +40,63 @@ export default function AdminDashboard() {
   };
 
   // 데이터 불러오기
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Places 데이터
-        const placesRes = await fetch('/api/templates');
-        const placesData = await placesRes.json();
-        setPlaces(placesData || []);
+  const fetchData = async () => {
+    try {
+      // Places 데이터
+      const placesRes = await fetch('/api/templates');
+      const placesData = await placesRes.json();
+      setPlaces(placesData || []);
 
-        // Inquiries 데이터 (Supabase)
-        if (supabaseUrl && supabaseKey) {
-          const supabase = createClient(supabaseUrl, supabaseKey);
-          const { data: inquiriesData } = await supabase
-            .from('inquiries')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(10);
-          
-          if (inquiriesData) {
-            setInquiries(inquiriesData);
-          }
+      // Inquiries 데이터 (Supabase)
+      if (supabaseUrl && supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const { data: inquiriesData } = await supabase
+          .from('inquiries')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (inquiriesData) {
+          setInquiries(inquiriesData);
         }
-
-        // Analytics 데이터 (실제 방문자 추적)
-        try {
-          const analyticsRes = await fetch('/api/analytics');
-          const analyticsResult = await analyticsRes.json();
-          if (analyticsResult.data) {
-            setAnalyticsData(analyticsResult.data);
-            
-            // 오늘 날짜의 방문자 수
-            const today = new Date().toISOString().split('T')[0];
-            const todayData = analyticsResult.data.find((d: any) => d.date === today);
-            setDailyVisitors(todayData?.visitors || 0);
-          }
-        } catch (error) {
-          console.error('Error fetching analytics:', error);
-          // 폴백: views_count 기반 추정
-          const totalViews = (placesData || []).reduce((sum: number, place: any) => sum + (place.views_count || 0), 0);
-          const estimatedUniqueVisitors = Math.floor(totalViews / 4);
-          setDailyVisitors(Math.max(1, Math.floor(estimatedUniqueVisitors / 30)));
-        }
-
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setLoading(false);
       }
-    };
 
+      // Analytics 데이터 (실제 방문자 추적)
+      try {
+        const analyticsRes = await fetch('/api/analytics', { cache: 'no-store' });
+        const analyticsResult = await analyticsRes.json();
+        if (analyticsResult.data) {
+          setAnalyticsData(analyticsResult.data);
+          
+          // 오늘 날짜의 방문자 수
+          const today = new Date().toISOString().split('T')[0];
+          const todayData = analyticsResult.data.find((d: any) => d.date === today);
+          setDailyVisitors(todayData?.visitors || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+        // 폴백: views_count 기반 추정
+        const totalViews = (placesData || []).reduce((sum: number, place: any) => sum + (place.views_count || 0), 0);
+        const estimatedUniqueVisitors = Math.floor(totalViews / 4);
+        setDailyVisitors(Math.max(1, Math.floor(estimatedUniqueVisitors / 30)));
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
+    
+    // 30초마다 자동 새로고침 (실시간 통계 반영)
+    const interval = setInterval(() => {
+      fetchData();
+    }, 30000); // 30초
+
+    return () => clearInterval(interval);
   }, [supabaseUrl, supabaseKey]);
 
   // 최근 7일간 방문 추이 데이터 생성 (실제 analytics 데이터 사용)

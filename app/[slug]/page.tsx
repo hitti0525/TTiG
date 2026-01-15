@@ -278,7 +278,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             ) : (
               <div className="flex items-center justify-center h-screen text-gray-400">No images available</div>
             )}
-            <footer className="py-20 px-12 bg-[#111] text-white"><div className="flex flex-col gap-8"><h2 className="text-2xl font-serif font-bold">TTiG.</h2><div className="text-xs font-bold tracking-widest text-gray-500 space-y-2"><p>© 2024 TTiG Archive.</p><p>Seoul, Korea</p></div></div></footer>
+            <footer className="py-20 px-12 bg-[#111] text-white"><div className="flex flex-col gap-8"><h2 className="text-2xl font-serif font-bold">TTiG.</h2><div className="text-xs font-bold tracking-widest text-gray-500 space-y-2"><p>© 2026 TTiG Archive.</p><p>Seoul, Korea</p></div></div></footer>
           </div>
         </div>
 

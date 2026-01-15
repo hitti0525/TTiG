@@ -13,6 +13,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Supabase not configured' }, { status: 500 });
     }
 
+    // 봇 필터링 (User-Agent 확인)
+    const userAgent = request.headers.get('user-agent') || '';
+    const botPatterns = [
+      /bot/i, /crawler/i, /spider/i, /crawling/i,
+      /googlebot/i, /bingbot/i, /slurp/i, /duckduckbot/i,
+      /baiduspider/i, /yandexbot/i, /sogou/i, /exabot/i,
+      /facebot/i, /ia_archiver/i, /naver/i, /Yeti/i,
+      /HeadlessChrome/i, /PhantomJS/i, /curl/i, /wget/i,
+      /python/i, /java/i, /node/i, /postman/i, /insomnia/i,
+    ];
+    
+    const isBot = botPatterns.some(pattern => pattern.test(userAgent));
+    if (isBot) {
+      return NextResponse.json({ success: false, error: 'Bot detected' }, { status: 200 });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
 
@@ -81,10 +97,14 @@ export async function GET(request: NextRequest) {
     if (isNewVisitor) {
       // 새로운 방문자 ID 생성 (UUID)
       const newVisitorId = crypto.randomUUID();
+      const isProduction = process.env.NODE_ENV === 'production';
       response.cookies.set('visitor_id', newVisitorId, {
         maxAge: 60 * 60 * 24, // 24시간
         httpOnly: true,
         sameSite: 'lax',
+        secure: isProduction, // 프로덕션에서만 HTTPS
+        path: '/',
+        // domain은 명시하지 않음 (기본 도메인 사용)
       });
     }
 

@@ -134,7 +134,7 @@ export default function ApplyPage() {
 
         {/* 푸터 */}
         <div className="absolute bottom-0 left-0 right-0 px-6 md:px-16 lg:px-48 py-6 flex justify-between items-center text-[10px] text-white/50 uppercase tracking-widest font-bold">
-          <p>© 2024 THE ARCHIVE</p>
+          <p>© 2026 THE ARCHIVE</p>
           <p>SEOUL, KOREA</p>
         </div>
       </div>
