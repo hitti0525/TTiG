@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     const isProduction = process.env.NODE_ENV === 'production';
     
+    // 쿠키 설정 (Next.js 14+ App Router 방식)
     cookieStore.set('admin_session', sessionToken, {
       httpOnly: true, // JavaScript로 접근 불가 (XSS 방지)
       secure: isProduction, // HTTPS에서만 전송 (프로덕션)
@@ -80,6 +81,14 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
     });
+
+    // 디버깅: 프로덕션에서는 제거 가능
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Login API] Session cookies set:', {
+        sessionToken: sessionToken.substring(0, 10) + '...',
+        email: email.toLowerCase(),
+      });
+    }
 
     return NextResponse.json({
       success: true,

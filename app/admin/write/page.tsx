@@ -338,8 +338,8 @@ function WriteForm() {
   );
 }
 
-// 외부 컴포넌트: Suspense로 감싸기
-function WritePageContent() {
+// 클라이언트 컴포넌트 래퍼
+function WritePageClient() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#F5F5F3] p-8 pt-32 flex justify-center text-[#111]">
@@ -348,7 +348,12 @@ function WritePageContent() {
         </div>
       </div>
     }>
-      <WriteForm />
+      <AuthCheck>
+        <WriteForm />
+      </AuthCheck>
     </Suspense>
   );
 }
+
+// 외부 컴포넌트: Suspense로 감싸기
+export default WritePageClient;
