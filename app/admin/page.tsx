@@ -2,8 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import dynamic from 'next/dynamic';
 import { createClient } from '@supabase/supabase-js';
+
+// 차트 섹션 전체를 동적으로 import (클라이언트 사이드에서만 로드)
+const TrafficSourceChart = dynamic(
+  () => import('./components/TrafficSourceChart'),
+  { ssr: false, loading: () => <div className="h-48 flex items-center justify-center text-sm text-[#111111]/40">로딩 중...</div> }
+);
+
+const VisitorTrendChart = dynamic(
+  () => import('./components/VisitorTrendChart'),
+  { ssr: false, loading: () => <div className="h-80 flex items-center justify-center text-sm text-[#111111]/40">로딩 중...</div> }
+);
 
 export default function AdminDashboard() {
   const [places, setPlaces] = useState<any[]>([]);
@@ -49,64 +60,80 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       // Places 데이터
-      const placesRes = await fetch('/api/templates');
-      const placesData = await placesRes.json();
-      setPlaces(placesData || []);
+      try {
+        const placesRes = await fetch('/api/templates');
+        if (placesRes.ok) {
+          const placesData = await placesRes.json();
+          setPlaces(Array.isArray(placesData) ? placesData : []);
+        }
+      } catch (error) {
+        console.error('Error fetching places:', error);
+        setPlaces([]);
+      }
 
       // Inquiries 데이터 (Supabase)
       if (supabaseUrl && supabaseKey) {
-        const supabase = createClient(supabaseUrl, supabaseKey);
-        const { data: inquiriesData } = await supabase
-          .from('inquiries')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(10);
-        
-        if (inquiriesData) {
-          setInquiries(inquiriesData);
+        try {
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          const { data: inquiriesData, error: inquiriesError } = await supabase
+            .from('inquiries')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(10);
+          
+          if (inquiriesError) {
+            console.error('Error fetching inquiries:', inquiriesError);
+            setInquiries([]);
+          } else {
+            setInquiries(Array.isArray(inquiriesData) ? inquiriesData : []);
+          }
+        } catch (error) {
+          console.error('Exception fetching inquiries:', error);
+          setInquiries([]);
         }
+      } else {
+        setInquiries([]);
       }
 
       // Analytics 데이터 (실제 방문자 추적)
       try {
         const analyticsRes = await fetch('/api/analytics', { cache: 'no-store' });
         const analyticsResult = await analyticsRes.json();
-        if (analyticsResult.data) {
-          setAnalyticsData(analyticsResult.data);
+        
+        // 데이터가 없어도 빈 배열로 설정 (에러 방지)
+        const safeAnalyticsData = Array.isArray(analyticsResult?.data) ? analyticsResult.data : [];
+        setAnalyticsData(safeAnalyticsData);
+        
+        // 오늘 날짜의 방문자 수 및 트래픽 소스
+        const today = new Date().toISOString().split('T')[0];
+        const todayData = safeAnalyticsData?.find((d: any) => d?.date === today);
+        
+        // 안전하게 방문자 수 설정
+        setDailyVisitors(todayData?.visitors ?? 0);
+        
+        // 트래픽 소스별 통계 (데이터가 없어도 기본값으로 설정)
+        try {
+          let trafficSourcesData = todayData?.traffic_sources;
           
-          // 오늘 날짜의 방문자 수 및 트래픽 소스
-          const today = new Date().toISOString().split('T')[0];
-          const todayData = analyticsResult.data.find((d: any) => d.date === today);
-          setDailyVisitors(todayData?.visitors || 0);
-          
-          // 트래픽 소스별 통계
-          try {
-            let trafficSourcesData = todayData?.traffic_sources;
-            
-            // JSONB가 문자열로 올 수 있으므로 파싱 시도
-            if (typeof trafficSourcesData === 'string') {
+          // JSONB가 문자열로 올 수 있으므로 파싱 시도
+          if (typeof trafficSourcesData === 'string') {
+            try {
               trafficSourcesData = JSON.parse(trafficSourcesData);
+            } catch (parseError) {
+              console.warn('Failed to parse traffic_sources:', parseError);
+              trafficSourcesData = null;
             }
-            
-            if (trafficSourcesData && typeof trafficSourcesData === 'object') {
-              setTrafficSources({
-                organic: Number(trafficSourcesData.organic) || 0,
-                direct: Number(trafficSourcesData.direct) || 0,
-                referral: Number(trafficSourcesData.referral) || 0,
-                social: Number(trafficSourcesData.social) || 0,
-              });
-            } else {
-              // 기본값 설정
-              setTrafficSources({
-                organic: 0,
-                direct: 0,
-                referral: 0,
-                social: 0,
-              });
-            }
-          } catch (error) {
-            console.error('Error parsing traffic sources:', error);
-            // 에러 발생 시 기본값
+          }
+          
+          if (trafficSourcesData && typeof trafficSourcesData === 'object' && !Array.isArray(trafficSourcesData)) {
+            setTrafficSources({
+              organic: Number(trafficSourcesData?.organic) || 0,
+              direct: Number(trafficSourcesData?.direct) || 0,
+              referral: Number(trafficSourcesData?.referral) || 0,
+              social: Number(trafficSourcesData?.social) || 0,
+            });
+          } else {
+            // 기본값 설정 (데이터가 없을 때)
             setTrafficSources({
               organic: 0,
               direct: 0,
@@ -114,31 +141,81 @@ export default function AdminDashboard() {
               social: 0,
             });
           }
+        } catch (error) {
+          console.error('Error parsing traffic sources:', error);
+          // 에러 발생 시 기본값
+          setTrafficSources({
+            organic: 0,
+            direct: 0,
+            referral: 0,
+            social: 0,
+          });
         }
       } catch (error) {
         console.error('Error fetching analytics:', error);
-        // 폴백: views_count 기반 추정
-        const totalViews = (placesData || []).reduce((sum: number, place: any) => sum + (place.views_count || 0), 0);
-        const estimatedUniqueVisitors = Math.floor(totalViews / 4);
-        setDailyVisitors(Math.max(1, Math.floor(estimatedUniqueVisitors / 30)));
+        // 에러 발생 시 빈 배열과 기본값 설정
+        setAnalyticsData([]);
+        setDailyVisitors(0);
+        setTrafficSources({
+          organic: 0,
+          direct: 0,
+          referral: 0,
+          social: 0,
+        });
       }
 
-      setLoading(false);
+      // 모든 데이터 로드 완료
     } catch (error) {
       console.error('Error fetching data:', error);
+      // 에러 발생 시에도 기본값 설정
+      setPlaces([]);
+      setInquiries([]);
+      setAnalyticsData([]);
+      setDailyVisitors(0);
+      setTrafficSources({
+        organic: 0,
+        direct: 0,
+        referral: 0,
+        social: 0,
+      });
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    // 초기 데이터 로드
+    let mounted = true;
+    
+    const loadData = async () => {
+      try {
+        await fetchData();
+        if (mounted) {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error in initial data load:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    loadData();
     
     // 30초마다 자동 새로고침 (실시간 통계 반영)
     const interval = setInterval(() => {
-      fetchData();
+      if (mounted) {
+        fetchData().catch((error) => {
+          console.error('Error in interval fetch:', error);
+        });
+      }
     }, 30000); // 30초
 
-    return () => clearInterval(interval);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, [supabaseUrl, supabaseKey]);
 
   // 최근 7일간 방문 추이 데이터 생성 (실제 analytics 데이터 사용)
@@ -146,7 +223,9 @@ export default function AdminDashboard() {
     const days = [];
     const today = new Date();
     
-    // analytics 데이터가 있으면 실제 데이터 사용, 없으면 빈 데이터
+    // analytics 데이터가 없어도 7일간의 빈 데이터 생성 (에러 방지)
+    const safeAnalyticsData = Array.isArray(analyticsData) ? analyticsData : [];
+    
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
@@ -154,13 +233,13 @@ export default function AdminDashboard() {
       const dayNumber = date.getDate();
       const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
       
-      // analytics 데이터에서 해당 날짜 찾기
-      const dayData = analyticsData.find((d: any) => d.date === dateString);
-      const visitors = dayData?.visitors || 0;
+      // analytics 데이터에서 해당 날짜 찾기 (안전하게)
+      const dayData = safeAnalyticsData?.find((d: any) => d?.date === dateString);
+      const visitors = dayData?.visitors ?? 0;
       
       days.push({
         day: `${dayNumber} ${dayName}`,
-        visitors: visitors,
+        visitors: Number(visitors) || 0,
       });
     }
     
@@ -177,8 +256,10 @@ export default function AdminDashboard() {
     );
   }
 
-  // 통계 계산
-  const totalKeeps = places.reduce((sum, place) => sum + (place.keeps_count || 0), 0);
+  // 통계 계산 (안전하게)
+  const totalKeeps = Array.isArray(places) 
+    ? places.reduce((sum: number, place: any) => sum + (Number(place?.keeps_count) || 0), 0)
+    : 0;
 
   return (
     <div className="p-12">
@@ -251,108 +332,16 @@ export default function AdminDashboard() {
         </div>
         
         {/* 트래픽 소스 막대 그래프 */}
-        {trafficSources && (
-          <div className="h-48 border-t border-b border-[#111111]/10 pt-6 pb-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={[
-                  { name: '검색', value: Number(trafficSources?.organic) || 0, label: '검색 엔진' },
-                  { name: '직접', value: Number(trafficSources?.direct) || 0, label: '직접 접속' },
-                  { name: '외부', value: Number(trafficSources?.referral) || 0, label: '외부 링크' },
-                  { name: '소셜', value: Number(trafficSources?.social) || 0, label: '소셜 미디어' },
-                ]}
-                margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
-              >
-                <CartesianGrid 
-                  strokeDasharray="0" 
-                  stroke="#e5e5e5" 
-                  vertical={false}
-                  strokeWidth={0.5}
-                />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 11, fill: '#666', fontFamily: 'sans-serif' }}
-                  stroke="#999"
-                  strokeWidth={0.5}
-                />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: '#666', fontFamily: 'sans-serif' }}
-                  stroke="#999"
-                  strokeWidth={0.5}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#F5F5F3', 
-                    border: '1px solid #111111',
-                    borderRadius: '0',
-                    fontSize: '11px',
-                    fontFamily: 'sans-serif',
-                    padding: '8px 12px'
-                  }}
-                  formatter={(value: number, name: string, props: any) => {
-                    const val = Number(value) || 0;
-                    const percent = dailyVisitors > 0 ? Math.round((val / dailyVisitors) * 100) : 0;
-                    return [`${val}명 (${percent}%)`, props?.payload?.label || ''];
-                  }}
-                />
-                <Bar 
-                  dataKey="value" 
-                  fill="#111111"
-                  radius={[0, 0, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+        <div className="h-48 border-t border-b border-[#111111]/10 pt-6 pb-4">
+          <TrafficSourceChart trafficSources={trafficSources} dailyVisitors={dailyVisitors} />
+        </div>
       </div>
 
       {/* 중앙: 최근 7일간 방문 추이 선 그래프 */}
       <div className="mb-16">
         <h2 className="text-xl font-serif font-bold text-[#111111] mb-6">최근 7일간 방문 추이</h2>
         <div className="h-80 border-t border-b border-[#111111]/10 pt-6 pb-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart 
-              data={last7DaysData} 
-              margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
-            >
-              <CartesianGrid 
-                strokeDasharray="0" 
-                stroke="#e5e5e5" 
-                vertical={false}
-                strokeWidth={0.5}
-              />
-              <XAxis 
-                dataKey="day" 
-                tick={{ fontSize: 11, fill: '#666', fontFamily: 'sans-serif' }}
-                stroke="#999"
-                strokeWidth={0.5}
-              />
-              <YAxis 
-                tick={{ fontSize: 11, fill: '#666', fontFamily: 'sans-serif' }}
-                stroke="#999"
-                strokeWidth={0.5}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#F5F5F3', 
-                  border: '1px solid #111111',
-                  borderRadius: '0',
-                  fontSize: '11px',
-                  fontFamily: 'sans-serif',
-                  padding: '8px 12px'
-                }}
-                cursor={{ stroke: '#111111', strokeWidth: 0.5, strokeDasharray: '2 2' }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="visitors" 
-                stroke="#111111" 
-                strokeWidth={2}
-                dot={{ fill: '#111111', r: 3 }}
-                activeDot={{ r: 5, stroke: '#111111', strokeWidth: 1 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <VisitorTrendChart data={last7DaysData} />
         </div>
       </div>
 
@@ -365,40 +354,54 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <div className="space-y-0 border-t border-[#111111]/10">
-            {inquiries.map((inquiry: any, index: number) => (
-              <div 
-                key={inquiry.id} 
-                className="py-6 border-b border-[#111111]/10 hover:bg-[#111111]/5 transition-colors"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-2">
-                      <span className="text-xs font-sans font-bold text-[#111111]">
-                        {inquiry.name || '익명'}
-                      </span>
-                      <span className="text-xs font-sans text-[#111111]/40">
-                        {new Date(inquiry.created_at).toLocaleDateString('ko-KR', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
+            {Array.isArray(inquiries) && inquiries.length > 0 ? (
+              inquiries.map((inquiry: any, index: number) => {
+                if (!inquiry || !inquiry.id) return null;
+                
+                return (
+                  <div 
+                    key={inquiry.id || index} 
+                    className="py-6 border-b border-[#111111]/10 hover:bg-[#111111]/5 transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4 mb-2">
+                          <span className="text-xs font-sans font-bold text-[#111111]">
+                            {inquiry?.name || '익명'}
+                          </span>
+                          <span className="text-xs font-sans text-[#111111]/40">
+                            {inquiry?.created_at 
+                              ? new Date(inquiry.created_at).toLocaleDateString('ko-KR', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })
+                              : '-'}
+                          </span>
+                        </div>
+                        <p className="text-sm font-sans text-[#111111]/80 leading-relaxed">
+                          {inquiry?.message || '-'}
+                        </p>
+                        <p className="text-xs font-sans text-[#111111]/40 mt-2">
+                          {inquiry?.email || '-'}
+                        </p>
+                      </div>
+                      {inquiry?.status === 'new' && (
+                        <span className="text-[10px] font-sans font-bold text-[#111111] border border-[#111111] px-2 py-1">
+                          신규
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm font-sans text-[#111111]/80 leading-relaxed">
-                      {inquiry.message || '-'}
-                    </p>
-                    <p className="text-xs font-sans text-[#111111]/40 mt-2">{inquiry.email}</p>
                   </div>
-                  {inquiry.status === 'new' && (
-                    <span className="text-[10px] font-sans font-bold text-[#111111] border border-[#111111] px-2 py-1">
-                      신규
-                    </span>
-                  )}
-                </div>
+                );
+              })
+            ) : (
+              <div className="py-12 text-center border-t border-b border-[#111111]/10">
+                <p className="text-sm font-sans text-[#111111]/40">문의 내역이 없습니다.</p>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>

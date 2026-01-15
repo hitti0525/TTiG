@@ -45,29 +45,33 @@ export default function AnalyticsTracker() {
       return;
     }
 
-    // 페이지 로드 시 방문자 추적
+    // 페이지 로드 시 방문자 추적 (에러가 나도 조용히 넘어감)
     fetch('/api/analytics/track', {
       method: 'GET',
       credentials: 'include',
     })
       .then((res) => {
-        if (!res.ok) {
-          console.warn('[Analytics] Tracking failed:', res.status, res.statusText);
-        }
-        return res.json();
+        // 응답 상태와 관계없이 JSON 파싱 시도
+        return res.json().catch(() => ({ success: true }));
       })
       .then((data) => {
-        if (data.success) {
+        if (data?.success) {
           // 성공적으로 추적됨 (디버깅용)
           if (process.env.NODE_ENV === 'development') {
             console.log('[Analytics] Tracked:', data);
           }
         } else {
-          console.warn('[Analytics] Tracking error:', data.error);
+          // 에러가 있어도 조용히 넘어감 (대시보드에 영향 없음)
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[Analytics] Tracking warning:', data?.error || 'Unknown');
+          }
         }
       })
       .catch((error) => {
-        console.error('[Analytics] Network error:', error);
+        // 네트워크 에러도 조용히 처리 (대시보드에 영향 없음)
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[Analytics] Network error (silent):', error);
+        }
       });
   }, []);
 
