@@ -7,6 +7,14 @@ const nextConfig = {
       { protocol: 'https', hostname: 'via.placeholder.com' },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/rss.xml',
+        destination: '/api/rss',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
